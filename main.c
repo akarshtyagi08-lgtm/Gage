@@ -356,3 +356,53 @@ int main(int argc, char** argv) {
     free(src);
     return 0;
 }
+int main(int argc, char** argv) {
+    if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
+        printf("Gage Programming Language v1.1.0\n");
+        return 0;
+    }
+
+    if (argc < 2) {
+        printf("Usage: gage <filename.gg>\n");
+        printf("       gage --version\n");
+        return 1;
+    }
+
+    // --- NEW STRICT EXTENSION CHECK ---
+    char* filename = argv[1];
+    char* ext = strrchr(filename, '.');
+    if (!ext || strcmp(ext, ".gg") != 0) {
+        printf("Error: Gage can only execute files with the .gg extension!\n");
+        return 1;
+    }
+    // ----------------------------------
+
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        printf("Error: Could not open file %s\n", filename);
+        return 1;
+    }
+
+    fseek(file, 0, SEEK_END);
+    src_len = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    src = malloc(src_len + 1);
+    if (!src) {
+        fclose(file);
+        return 1;
+    }
+    size_t read_bytes = fread(src, 1, src_len, file);
+    src[read_bytes] = '\0';
+    fclose(file);
+
+    tokenize();
+    
+    while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) {
+        interpret_statement();
+    }
+
+    free(src);
+    return 0;
+}
+
