@@ -7,11 +7,12 @@ typedef enum {
     TOKEN_EOF, TOKEN_PRINT, TOKEN_LET, TOKEN_IDENT, TOKEN_INT, TOKEN_STRING,
     TOKEN_PLUS, TOKEN_MINUS, TOKEN_STAR, TOKEN_SLASH, TOKEN_ASSIGN,
     TOKEN_IF, TOKEN_ELSE, TOKEN_WHILE, TOKEN_LPAREN, TOKEN_RPAREN,
-    TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_INPUT
+    TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_INPUT,
+    TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_COMMA
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
-typedef struct { char name[50]; int value; } Variable;
+typedef struct { char name[50]; int value; int is_array; int array[10]; int array_size; } Variable;
 
 #define MAX_VARIABLES 100
 Variable symbolTable[MAX_VARIABLES];
@@ -48,13 +49,34 @@ void tokenize() {
     while (src_pos < src_len) {
         char c = src[src_pos];
         if (isspace(c)) { src_pos++; continue; }
+        
+        // Comments: || ... ||
+        if (c == '|' && src[src_pos+1] == '|') {
+            src_pos += 2;
+            while (src_pos < src_len && !(src[src_pos] == '|' && src[src_pos+1] == '|')) src_pos++;
+            src_pos += 2;
+            continue;
+        }
+
         if (c == '"') {
             int start = ++src_pos;
-            while (src_pos < src_len && src[src_pos] != '"') src_pos++;
+            int t_idx = 0;
             Token t; t.type = TOKEN_STRING;
-            int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0';
+            while (src_pos < src_len && src[src_pos] != '"') {
+                if (src[src_pos] == '\\') {
+                    src_pos++;
+                    if (src[src_pos] == 'n') t.value[t_idx++] = '\n';
+                    else if (src[src_pos] == '\\') t.value[t_idx++] = '\\';
+                    else t.value[t_idx++] = src[src_pos];
+                } else {
+                    t.value[t_idx++] = src[src_pos];
+                }
+                src_pos++;
+            }
+            t.value[t_idx] = '\0';
             tokens[tokenCount++] = t; src_pos++; continue;
         }
+        
         if (isdigit(c)) {
             int start = src_pos;
             while (src_pos < src_len && isdigit(src[src_pos])) src_pos++;
@@ -81,6 +103,8 @@ void tokenize() {
         else if (c == '*') t.type = TOKEN_STAR; else if (c == '/') t.type = TOKEN_SLASH;
         else if (c == '(') t.type = TOKEN_LPAREN; else if (c == ')') t.type = TOKEN_RPAREN;
         else if (c == '{') t.type = TOKEN_LBRACE; else if (c == '}') t.type = TOKEN_RBRACE;
+        else if (c == '[') t.type = TOKEN_LBRACKET; else if (c == ']') t.type = TOKEN_RBRACKET;
+        else if (c == ',') t.type = TOKEN_COMMA;
         else if (c == '>') t.type = TOKEN_GT; else if (c == '<') t.type = TOKEN_LT;
         else if (c == '=') {
             if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_EQ; strcpy(t.value, "=="); src_pos++; }
@@ -150,6 +174,10 @@ void interpret_statement() {
             printf("> ");
             scanf("%d", &val);
             set_variable(name_tok.value, val);
+        } else if (peek_token().type == TOKEN_LBRACKET) {
+            next_token(); // skip [
+            while(peek_token().type != TOKEN_RBRACKET) next_token();
+            next_token(); // skip ]
         } else {
             set_variable(name_tok.value, parse_expression());
         }
@@ -177,7 +205,7 @@ void execute_statements() {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v1.1.1\n"); return 0;
+        printf("Gage Programming Language v1.1.2\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');

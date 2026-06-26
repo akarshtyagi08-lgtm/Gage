@@ -16,87 +16,89 @@ How to use Gage from your command line:
 Use the `print` keyword to output text or numbers. 
 * **Strings** must be wrapped in double quotes `" "`.
 * **Variables/Numbers** are printed directly without quotes.
+* **Escape sequences:** Use `\n` for a new line and `\\` for a backslash.
 
     ```text
-    print "Hello, World!"
+    print "Hello\nWorld"
+    ```
+
+---
+
+## 3. Comments
+Need to hide text? Use `||` at the start and end of your comments.
+
+    ```text
+    || This is a comment that the computer ignores ||
     print 100
     ```
 
 ---
 
-## 3. Variables & Memory
-Store data in RAM using the `let` keyword. Variable names must start with a letter.
+## 4. Variables & Memory
+Store data in RAM using the `let` keyword. 
 
     ```text
     let my_number = 50
-    let score = 100
-    print my_number
     ```
 
 ---
 
-## 4. Mathematical Operations
-Gage supports standard math parsing. You can mix numbers and variables!
-* **Addition:** `+`
-* **Subtraction:** `-`
-* **Multiplication:** `*`
-* **Division:** `/`
+## 5. Arrays (Initialization)
+You can initialize arrays with square brackets.
 
     ```text
-    let x = 10
-    let y = 5
-    let result = x + y * 2
-    print result
+    let my_list = [1, 2, 3]
     ```
 
 ---
 
-## 5. If-Else Conditions (Logic)
+## 6. Mathematical Operations
+Gage supports standard math parsing.
+* **Addition:** `+`, **Subtraction:** `-`, **Multiplication:** `*`, **Division:** `/`
+
+    ```text
+    let result = 10 + 5
+    ```
+
+---
+
+## 7. If-Else Conditions (Logic)
 Make your code smart using `if` and `else` blocks. 
-* **Supported checks:** `==` (Equal), `>` (Greater than), `<` (Less than).
-* **Note:** Always use `{` and `}` for your code blocks!
 
     ```text
     let age = 18
-
     if (age > 17) {
         print "Access Granted!"
-    } else {
-        print "Access Denied!"
     }
     ```
 
 ---
 
-## 6. While Loops (Automation)
+## 8. While Loops
 Repeat actions automatically until a condition becomes false.
 
     ```text
-    let count = 1
-
     while (count < 5) {
         print count
-        let count = count + 1
     }
-
-    print "Loop finished!"
     ```
 
 ---
 
-## 7. User Input
-Use the `input` keyword to get values from the user while the program runs.
+## 9. User Input
+Use the `input` keyword to get values from the user.
     
     ```text
-    print "Enter a number:"
     let x = input
-    print x
     ```
 
 ---
 
 ### Syntax Rules to Remember
-1.  **No semicolons needed:** Do not put `;` at the end of lines!
+1.  **No semicolons:** Do not put `;` at the end of lines!
+2.  **Case-sensitive:** `let X` and `let x` are different.
+3.  **Mandatory extension:** All files must end with `.gg`.
+e end of lines!
 2.  **Case-sensitive:** `let X` and `let x` are treated as two different variables.
 3.  **Variable limits:** Gage currently supports up to 100 active variables per script to keep the language ultra-lightweight.
 4.  **Mandatory extension:** All source files must end with the `.gg` extension.
