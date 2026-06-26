@@ -88,3 +88,4 @@ Repeat actions automatically until a condition becomes false.
 1.  **No semicolons needed:** Do not put `;` at the end of lines!
 2.  **Case-sensitive:** `let X` and `let x` are treated as two different variables.
 3.  **Variable limits:** Gage currently supports up to 100 active variables per script to keep the language ultra-lightweight.
+4.  **Mandatory extension:** All source files must end with the `.gg` extension.
