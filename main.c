@@ -220,7 +220,7 @@ void execute_statements() {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v1.1.3\n"); return 0;
+        printf("Gage Programming Language v1.1.5\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');
