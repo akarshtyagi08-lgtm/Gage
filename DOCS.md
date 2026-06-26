@@ -95,10 +95,7 @@ Use the `input` keyword to get values from the user.
 ---
 
 ### Syntax Rules to Remember
-1.  **No semicolons:** Do not put `;` at the end of lines!
-2.  **Case-sensitive:** `let X` and `let x` are different.
-3.  **Mandatory extension:** All source files must end with the `.gg` extension.
-xtension:** All files must end with `.gg`.
-o different variables.
-3.  **Variable limits:** Gage currently supports up to 100 active variables per script to keep the language ultra-lightweight.
-4.  **Mandatory extension:** All source files must end with the `.gg` extension.
+1. **No semicolons:** Do not put `;` at the end of lines!
+2. **Case-sensitive:** `let X` and `let x` are different.
+3. **Mandatory extension:** All source files must end with the `.gg` extension.
+
