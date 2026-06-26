@@ -12,11 +12,14 @@ typedef enum {
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
-typedef struct { char name[50]; int value; int is_array; int array[10]; int array_size; } Variable;
 
-#define MAX_VARIABLES 100
-Variable symbolTable[MAX_VARIABLES];
-int variableCount = 0;
+typedef struct Variable {
+    char name[50];
+    int value;
+    struct Variable *next;
+} Variable;
+
+Variable *symbolTable = NULL;
 
 char *src;
 int src_pos = 0, src_len = 0;
@@ -24,25 +27,38 @@ Token tokens[10000];
 int tokenCount = 0, currentTokenIndex = 0;
 
 void set_variable(const char* name, int value) {
-    for (int i = 0; i < variableCount; i++) {
-        if (strcmp(symbolTable[i].name, name) == 0) {
-            symbolTable[i].value = value;
+    Variable *curr = symbolTable;
+    while (curr != NULL) {
+        if (strcmp(curr->name, name) == 0) {
+            curr->value = value;
             return;
         }
+        curr = curr->next;
     }
-    if (variableCount < MAX_VARIABLES) {
-        strcpy(symbolTable[variableCount].name, name);
-        symbolTable[variableCount].value = value;
-        variableCount++;
-    }
+    Variable *newVar = malloc(sizeof(Variable));
+    strcpy(newVar->name, name);
+    newVar->value = value;
+    newVar->next = symbolTable;
+    symbolTable = newVar;
 }
 
 int get_variable(const char* name) {
-    for (int i = 0; i < variableCount; i++) {
-        if (strcmp(symbolTable[i].name, name) == 0) return symbolTable[i].value;
+    Variable *curr = symbolTable;
+    while (curr != NULL) {
+        if (strcmp(curr->name, name) == 0) return curr->value;
+        curr = curr->next;
     }
     printf("Runtime Error: Undefined variable '%s'\n", name);
     exit(1);
+}
+
+void free_variables() {
+    Variable *curr = symbolTable;
+    while (curr != NULL) {
+        Variable *temp = curr;
+        curr = curr->next;
+        free(temp);
+    }
 }
 
 void tokenize() {
@@ -50,7 +66,6 @@ void tokenize() {
         char c = src[src_pos];
         if (isspace(c)) { src_pos++; continue; }
         
-        // Comments: || ... ||
         if (c == '|' && src[src_pos+1] == '|') {
             src_pos += 2;
             while (src_pos < src_len && !(src[src_pos] == '|' && src[src_pos+1] == '|')) src_pos++;
@@ -175,9 +190,9 @@ void interpret_statement() {
             scanf("%d", &val);
             set_variable(name_tok.value, val);
         } else if (peek_token().type == TOKEN_LBRACKET) {
-            next_token(); // skip [
+            next_token();
             while(peek_token().type != TOKEN_RBRACKET) next_token();
-            next_token(); // skip ]
+            next_token();
         } else {
             set_variable(name_tok.value, parse_expression());
         }
@@ -205,7 +220,7 @@ void execute_statements() {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v1.1.2\n"); return 0;
+        printf("Gage Programming Language v1.1.3\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');
@@ -216,5 +231,5 @@ int main(int argc, char** argv) {
     src = malloc(src_len + 1); size_t read_bytes = fread(src, 1, src_len, file);
     src[read_bytes] = '\0'; fclose(file); tokenize();
     while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) interpret_statement();
-    free(src); return 0;
+    free(src); free_variables(); return 0;
 }
