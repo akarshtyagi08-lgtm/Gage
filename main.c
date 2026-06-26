@@ -7,7 +7,7 @@ typedef enum {
     TOKEN_EOF, TOKEN_PRINT, TOKEN_LET, TOKEN_IDENT, TOKEN_INT, TOKEN_STRING,
     TOKEN_PLUS, TOKEN_MINUS, TOKEN_STAR, TOKEN_SLASH, TOKEN_ASSIGN,
     TOKEN_IF, TOKEN_ELSE, TOKEN_WHILE, TOKEN_LPAREN, TOKEN_RPAREN,
-    TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ
+    TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_INPUT
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
@@ -72,6 +72,7 @@ void tokenize() {
             else if (strcmp(t.value, "if") == 0) t.type = TOKEN_IF;
             else if (strcmp(t.value, "else") == 0) t.type = TOKEN_ELSE;
             else if (strcmp(t.value, "while") == 0) t.type = TOKEN_WHILE;
+            else if (strcmp(t.value, "input") == 0) t.type = TOKEN_INPUT;
             else t.type = TOKEN_IDENT;
             tokens[tokenCount++] = t; continue;
         }
@@ -141,7 +142,17 @@ void interpret_statement() {
         if (next.type == TOKEN_STRING) { next_token(); printf("%s\n", next.value); }
         else printf("%d\n", parse_expression());
     } else if (tok.type == TOKEN_LET) {
-        Token name_tok = next_token(); next_token(); set_variable(name_tok.value, parse_expression());
+        Token name_tok = next_token();
+        next_token(); 
+        if (peek_token().type == TOKEN_INPUT) {
+            next_token();
+            int val;
+            printf("> ");
+            scanf("%d", &val);
+            set_variable(name_tok.value, val);
+        } else {
+            set_variable(name_tok.value, parse_expression());
+        }
     } else if (tok.type == TOKEN_IF) {
         int cond = evaluate_condition();
         if (cond) { next_token(); execute_statements(); if (peek_token().type == TOKEN_ELSE) { next_token(); skip_block(); } }
@@ -166,7 +177,7 @@ void execute_statements() {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v1.1.0\n"); return 0;
+        printf("Gage Programming Language v1.1.1\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');
@@ -179,4 +190,3 @@ int main(int argc, char** argv) {
     while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) interpret_statement();
     free(src); return 0;
 }
-

@@ -84,6 +84,17 @@ Repeat actions automatically until a condition becomes false.
 
 ---
 
+## 7. User Input
+Use the `input` keyword to get values from the user while the program runs.
+    
+    ```text
+    print "Enter a number:"
+    let x = input
+    print x
+    ```
+
+---
+
 ### Syntax Rules to Remember
 1.  **No semicolons needed:** Do not put `;` at the end of lines!
 2.  **Case-sensitive:** `let X` and `let x` are treated as two different variables.
