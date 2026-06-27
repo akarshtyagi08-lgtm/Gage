@@ -268,7 +268,6 @@ void compile_statement(FILE* out) {
         FILE* mod_file = fopen(mod_path, "r");
         if (mod_file) {
             int ch;
-            // Global Fix: Redirect imported C module functions to out_modules stream (Global Scope)
             while ((ch = fgetc(mod_file)) != EOF) fputc(ch, out_modules);
             fclose(mod_file);
             fprintf(out_modules, "\n");
@@ -320,26 +319,23 @@ int main(int argc, char** argv) {
     fclose(out_main);
     fclose(out_modules);
 
-    // Assembly Stage: Construct intermediate clean execution pipeline code
     FILE* out_c = fopen(p_t, "w");
     fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\n#include <unistd.h>\n#include <math.h>\n\n");
     
-    // 1. Inject module implementations globally outside/above main
+    int c;
     FILE* m_mods = fopen(p_modules, "r");
     if (m_mods) {
-        int c;
         while ((c = fgetc(m_mods)) != EOF) fputc(c, out_c);
         fclose(m_mods);
     }
 
-    // 2. Open standard statement block container scope
     fprintf(out_c, "\nint main(){\n");
     
-    // 3. Inject parsed main runtime block instructions
     FILE* m_in = fopen(p_m, "r");
-    int c;
-    while ((c = fgetc(m_in)) != EOF) fputc(c, out_c);
-    fclose(m_in);
+    if (m_in) {
+        while ((c = fgetc(m_in)) != EOF) fputc(c, out_c);
+        fclose(m_in);
+    }
     
     fprintf(out_c, "return 0;}");
     fclose(out_c);
