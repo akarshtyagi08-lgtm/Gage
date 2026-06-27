@@ -4,7 +4,6 @@
 #include <string.h>
 #include <ctype.h>
 
-// Forward declarations
 void compile_statement(FILE* out);
 void compile_expression(FILE* out);
 void compile_block(FILE* out);
@@ -48,6 +47,7 @@ void tokenize() {
         else if (c == '=') { if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_EQ; strcpy(t.value, "=="); src_pos++; } else t.type = TOKEN_ASSIGN; }
         else if (c == '(') t.type = TOKEN_LPAREN; else if (c == ')') t.type = TOKEN_RPAREN;
         else if (c == '{') t.type = TOKEN_LBRACE; else if (c == '}') t.type = TOKEN_RBRACE;
+        else if (c == ',') t.type = TOKEN_COMMA;
         else if (c == '!') { if(src_pos+1 < src_len && src[src_pos+1] == '=') { t.type = TOKEN_NEQ; strcpy(t.value, "!="); src_pos++; } else t.type = TOKEN_NOT; }
         else if (c == '<') t.type = TOKEN_LT; else if (c == '>') t.type = TOKEN_GT; else { src_pos++; continue; }
         tokens[tokenCount++] = t; src_pos++;
@@ -63,19 +63,20 @@ void compile_expression(FILE* out) {
     while (currentTokenIndex < tokenCount) {
         Token t = peek_token();
         int is_operand = (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT);
-        
-        // Permanent Fix: Stop if we see two operands back-to-back (like `i` then `i`)
         if (expect_operator && is_operand) break; 
         
-        if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || t.type == TOKEN_LT || t.type == TOKEN_GT) {
+        if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || t.type == TOKEN_LT || t.type == TOKEN_GT || t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA) {
             fprintf(out, "%s ", next_token().value);
-            expect_operator = is_operand;
+            if (t.type != TOKEN_LPAREN && t.type != TOKEN_RPAREN && t.type != TOKEN_COMMA) expect_operator = is_operand;
         } else if (t.type == TOKEN_IDENT) {
             if (currentTokenIndex + 1 < tokenCount) {
                 TokenType nt = tokens[currentTokenIndex + 1].type;
                 if (nt == TOKEN_ASSIGN || nt == TOKEN_MOD_ASSIGN || nt == TOKEN_PLUS_ASSIGN || nt == TOKEN_MINUS_ASSIGN) break;
             }
-            fprintf(out, "%s ", next_token().value);
+            // Map common math to C math.h equivalents
+            if (strcmp(t.value, "abs") == 0) fprintf(out, "fabs ");
+            else fprintf(out, "%s ", t.value);
+            next_token();
             expect_operator = 1;
         } else {
             break;
@@ -128,21 +129,29 @@ void compile_statement(FILE* out) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2) return 1;
-    FILE* file = fopen(argv[1], "r"); if (!file) return 1;
+    if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
+        printf("Gage Programming Language v3.2.0\n"); 
+        return 0; 
+    }
+    if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
+    
+    FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
     fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET);
     src = malloc(src_len + 1); fread(src, 1, src_len, file); src[src_len] = '\0'; fclose(file); 
     tokenize();
+    
     char* tmp = getenv("TMPDIR") ? getenv("TMPDIR") : "/tmp";
     char p_m[512], p_t[512], p_e[512];
     sprintf(p_m, "%s/.gm.c", tmp); sprintf(p_t, "%s/.gt.c", tmp); sprintf(p_e, "%s/.ge", tmp);
     out_main = fopen(p_m, "w");
     while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) compile_statement(out_main);
     fclose(out_main);
+    
     FILE* out_c = fopen(p_t, "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <math.h>\nint main(){");
+    fprintf(out_c, "#include <stdio.h>\n#include <math.h>\n#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\nint main(){");
     FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
     fprintf(out_c, "return 0;}"); fclose(out_c); free(src);
+    
     char cmd[1024]; sprintf(cmd, "clang -O0 %s -o %s -lm && %s", p_t, p_e, p_e);
     system(cmd);
     char clean[1024]; sprintf(clean, "rm -f %s %s %s", p_m, p_t, p_e);
