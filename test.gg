@@ -1,1 +1,5 @@
-class Player let score = 100
+const PI = 3.14
+print 2 ** 3
+let x = 10
+x %= 3
+print x

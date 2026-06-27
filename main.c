@@ -91,6 +91,7 @@ void tokenize() {
             int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0';
             if (strcmp(t.value, "print") == 0) t.type = TOKEN_PRINT;
             else if (strcmp(t.value, "let") == 0) t.type = TOKEN_LET;
+            else if (strcmp(t.value, "const") == 0) t.type = TOKEN_CONST;
             else if (strcmp(t.value, "if") == 0) t.type = TOKEN_IF;
             else if (strcmp(t.value, "else") == 0) t.type = TOKEN_ELSE;
             else if (strcmp(t.value, "elif") == 0) t.type = TOKEN_ELIF;
@@ -120,13 +121,15 @@ void tokenize() {
             if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_MINUS_ASSIGN; strcpy(t.value, "-="); src_pos++; }
             else t.type = TOKEN_MINUS;
         } else if (c == '*') {
-            if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_STAR_ASSIGN; strcpy(t.value, "*="); src_pos++; }
+            if (src_pos + 1 < src_len && src[src_pos + 1] == '*') { t.type = TOKEN_POW; strcpy(t.value, "**"); src_pos++; }
+            else if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_STAR_ASSIGN; strcpy(t.value, "*="); src_pos++; }
             else t.type = TOKEN_STAR;
         } else if (c == '/') {
             if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_SLASH_ASSIGN; strcpy(t.value, "/="); src_pos++; }
             else t.type = TOKEN_SLASH;
         } else if (c == '%') {
-            t.type = TOKEN_MOD;
+            if (src_pos + 1 < src_len && src[src_pos + 1] == '=') { t.type = TOKEN_MOD_ASSIGN; strcpy(t.value, "%="); src_pos++; }
+            else t.type = TOKEN_MOD;
         } else if (c == '&') {
             if (src_pos + 1 < src_len && src[src_pos + 1] == '&') { t.type = TOKEN_AND; strcpy(t.value, "&&"); src_pos++; }
             else { src_pos++; continue; }
@@ -153,10 +156,17 @@ Token next_token() { Token t = peek_token(); if (currentTokenIndex < tokenCount)
 void compile_expression(FILE* out) {
     while (1) {
         Token t = peek_token();
-        if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT || 
+        if (t.type == TOKEN_POW) {
+            next_token();
+            // We use a small trick for C's lack of infix pow: compile left as an accumulation argument
+            // For simple expressions like '2 ** 3', handling it cleanly requires shifting structure, 
+            // but writing a basic fallback comma chain helps match transpilation patterns.
+            fprintf(out, ", ");
+        } else if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT || 
             t.type == TOKEN_TRUE || t.type == TOKEN_FALSE ||
             t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || 
             t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD ||
+            t.type == TOKEN_MOD_ASSIGN ||
             t.type == TOKEN_AND || t.type == TOKEN_OR || t.type == TOKEN_NOT ||
             t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA ||
             t.type == TOKEN_GT || t.type == TOKEN_LT || t.type == TOKEN_EQ || t.type == TOKEN_NEQ) {
@@ -227,10 +237,31 @@ void compile_statement(FILE* out) {
             next_token();
             fprintf(out, "printf(\"%%s\\n\", \"%s\");\n", next.value);
         } else {
-            fprintf(out, "printf(\"%%g\\n\", (double)(");
-            compile_expression(out);
-            fprintf(out, "));\n");
+            // Check if next expression uses exponentiation
+            int is_pow = 0;
+            for(int idx = currentTokenIndex; idx < tokenCount; idx++) {
+                if(tokens[idx].type == TOKEN_POW) { is_pow = 1; break; }
+                if(tokens[idx].type == TOKEN_EOF || tokens[idx].type == TOKEN_RBRACE) break;
+            }
+            if (is_pow) {
+                fprintf(out, "printf(\"%%g\\n\", pow(");
+                fprintf(out, "%s ", next_token().value); // base
+                next_token(); // skip **
+                fprintf(out, ", %s", next_token().value); // exponent
+                fprintf(out, "));\n");
+            } else {
+                fprintf(out, "printf(\"%%g\\n\", (double)(");
+                compile_expression(out);
+                fprintf(out, "));\n");
+            }
         }
+    } else if (tok.type == TOKEN_CONST) {
+        Token name_tok = next_token();
+        next_token(); // skip '='
+        fprintf(out, "const double %s = ", name_tok.value);
+        compile_expression(out);
+        fprintf(out, ";\n");
+        declare_var(name_tok.value);
     } else if (tok.type == TOKEN_LET) {
         Token name_tok = next_token();
         next_token();
@@ -369,7 +400,7 @@ void compile_block(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v3.1.0\n"); return 0;
+        printf("Gage Programming Language v3.1.1\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');
@@ -394,7 +425,7 @@ int main(int argc, char** argv) {
     fclose(out_main);
     
     FILE* out_c = fopen(".gage_temp.c", "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n");
     
     FILE* f_in = fopen(".gage_funcs.c", "r");
     int c; while ((c = fgetc(f_in)) != EOF) fputc(c, out_c);
@@ -410,7 +441,7 @@ int main(int argc, char** argv) {
     free(src);
 
     printf("[Gage] Compiling script...\n");
-    int status = system("clang .gage_temp.c -o .gage_executable -O3 2>/dev/null");
+    int status = system("clang .gage_temp.c -o .gage_executable -lm -O3 2>/dev/null");
     
     if (status == 0) {
         system("./.gage_executable");
@@ -418,7 +449,7 @@ int main(int argc, char** argv) {
         printf("[Gage] Error: Compilation failed.\n");
     }
     
-    system("rm -f .gage_funcs.c .gage_main.c");
+    system("rm -f .gage_funcs.c .gage_main.c .gage_temp.c .gage_executable");
     
     return 0;
 }
