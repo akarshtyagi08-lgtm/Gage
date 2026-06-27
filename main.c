@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h> // Added for sleep()
 
 void compile_statement(FILE* out);
 void compile_expression(FILE* out);
@@ -16,7 +17,8 @@ typedef enum {
     TOKEN_OR, TOKEN_NOT, TOKEN_IF, TOKEN_ELSE, TOKEN_WHILE, TOKEN_LPAREN, TOKEN_RPAREN,
     TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_NEQ, TOKEN_INPUT,
     TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_COMMA, TOKEN_ELIF, TOKEN_FOR, TOKEN_BREAK, 
-    TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT, TOKEN_FN, TOKEN_RETURN
+    TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT, TOKEN_FN, TOKEN_RETURN,
+    TOKEN_EXEC, TOKEN_SLEEP, TOKEN_CLEAR // Added Set 2 Tokens
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
@@ -38,7 +40,19 @@ void tokenize() {
         if (isspace(c)) { src_pos++; continue; }
         if (c == '"') { src_pos++; int t_idx = 0; Token t; t.type = TOKEN_STRING; while (src_pos < src_len && src[src_pos] != '"') t.value[t_idx++] = src[src_pos++]; t.value[t_idx] = '\0'; tokens[tokenCount++] = t; src_pos++; continue; }
         if (isdigit(c)) { int start = src_pos; int has_dot = 0; while (src_pos < src_len && (isdigit(src[src_pos]) || src[src_pos] == '.')) { if (src[src_pos] == '.') has_dot = 1; src_pos++; } Token t; t.type = has_dot ? TOKEN_FLOAT : TOKEN_INT; int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0'; tokens[tokenCount++] = t; continue; }
-        if (isalpha(c) || c == '_') { int start = src_pos; while (src_pos < src_len && (isalnum(src[src_pos]) || src[src_pos] == '_')) src_pos++; Token t; int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0'; if (strcmp(t.value, "print") == 0) t.type = TOKEN_PRINT; else if (strcmp(t.value, "let") == 0) t.type = TOKEN_LET; else if (strcmp(t.value, "const") == 0) t.type = TOKEN_CONST; else if (strcmp(t.value, "while") == 0) t.type = TOKEN_WHILE; else t.type = TOKEN_IDENT; tokens[tokenCount++] = t; continue; }
+        if (isalpha(c) || c == '_') { 
+            int start = src_pos; while (src_pos < src_len && (isalnum(src[src_pos]) || src[src_pos] == '_')) src_pos++; 
+            Token t; int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0'; 
+            if (strcmp(t.value, "print") == 0) t.type = TOKEN_PRINT; 
+            else if (strcmp(t.value, "let") == 0) t.type = TOKEN_LET; 
+            else if (strcmp(t.value, "const") == 0) t.type = TOKEN_CONST; 
+            else if (strcmp(t.value, "while") == 0) t.type = TOKEN_WHILE; 
+            else if (strcmp(t.value, "exec") == 0) t.type = TOKEN_EXEC; // Set 2
+            else if (strcmp(t.value, "sleep") == 0) t.type = TOKEN_SLEEP; // Set 2
+            else if (strcmp(t.value, "clear") == 0) t.type = TOKEN_CLEAR; // Set 2
+            else t.type = TOKEN_IDENT; 
+            tokens[tokenCount++] = t; continue; 
+        }
         Token t; t.value[0] = c; t.value[1] = '\0';
         if (c == '+') { if (src_pos+1 < src_len && src[src_pos+1] == '=') { t.type = TOKEN_PLUS_ASSIGN; strcpy(t.value, "+="); src_pos++; } else t.type = TOKEN_PLUS; }
         else if (c == '-') { if (src_pos+1 < src_len && src[src_pos+1] == '=') { t.type = TOKEN_MINUS_ASSIGN; strcpy(t.value, "-="); src_pos++; } else t.type = TOKEN_MINUS; }
@@ -67,14 +81,9 @@ void compile_expression(FILE* out) {
         
         if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || t.type == TOKEN_LT || t.type == TOKEN_GT || t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA) {
             fprintf(out, "%s ", next_token().value);
-            // Parentheses boundary structural handling
-            if (t.type == TOKEN_LPAREN || t.type == TOKEN_COMMA) {
-                expect_operator = 0;
-            } else if (t.type == TOKEN_RPAREN) {
-                expect_operator = 1;
-            } else {
-                expect_operator = is_operand;
-            }
+            if (t.type == TOKEN_LPAREN || t.type == TOKEN_COMMA) { expect_operator = 0; } 
+            else if (t.type == TOKEN_RPAREN) { expect_operator = 1; } 
+            else { expect_operator = is_operand; }
         } else if (t.type == TOKEN_IDENT) {
             if (currentTokenIndex + 1 < tokenCount) {
                 TokenType nt = tokens[currentTokenIndex + 1].type;
@@ -82,11 +91,8 @@ void compile_expression(FILE* out) {
             }
             if (strcmp(t.value, "abs") == 0) fprintf(out, "fabs ");
             else fprintf(out, "%s ", t.value);
-            next_token();
-            expect_operator = 1;
-        } else {
-            break;
-        }
+            next_token(); expect_operator = 1;
+        } else { break; }
     }
 }
 
@@ -113,16 +119,25 @@ void compile_statement(FILE* out) {
     Token tok = next_token();
     if (tok.type == TOKEN_PRINT) {
         Token next = peek_token();
+        if (next.type == TOKEN_STRING) { next_token(); fprintf(out, "printf(\"%%s\\n\", \"%s\");\n", next.value); } 
+        else { fprintf(out, "printf(\"%%g\\n\", (double)("); compile_expression(out); fprintf(out, "));\n"); }
+    } else if (tok.type == TOKEN_CLEAR) {
+        fprintf(out, "system(\"clear\");\n");
+        if (peek_token().type == TOKEN_LPAREN) { next_token(); next_token(); }
+    } else if (tok.type == TOKEN_SLEEP) {
+        if (peek_token().type == TOKEN_LPAREN) next_token();
+        fprintf(out, "sleep((unsigned int)("); compile_expression(out); fprintf(out, "));\n");
+    } else if (tok.type == TOKEN_EXEC) {
+        if (peek_token().type == TOKEN_LPAREN) next_token();
+        Token next = peek_token();
         if (next.type == TOKEN_STRING) {
-            next_token(); fprintf(out, "printf(\"%%s\\n\", \"%s\");\n", next.value);
-        } else {
-            fprintf(out, "printf(\"%%g\\n\", (double)("); compile_expression(out); fprintf(out, "));\n");
+            next_token(); fprintf(out, "system(\"%s\");\n", next.value);
         }
+        if (peek_token().type == TOKEN_RPAREN) next_token();
     } else if (tok.type == TOKEN_LET || tok.type == TOKEN_CONST) {
         Token name = next_token(); next_token();
         fprintf(out, "%s %s = ", (tok.type == TOKEN_CONST ? "const double" : "int"), name.value);
-        compile_expression(out); fprintf(out, ";\n");
-        declare_var(name.value);
+        compile_expression(out); fprintf(out, ";\n"); declare_var(name.value);
     } else if (tok.type == TOKEN_IDENT) {
         Token op = next_token();
         if (op.type == TOKEN_ASSIGN || op.type == TOKEN_PLUS_ASSIGN || op.type == TOKEN_MINUS_ASSIGN) {
@@ -136,8 +151,7 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
-        printf("Gage Programming Language v3.2.0\n"); 
-        return 0; 
+        printf("Gage Programming Language v3.3.0\n"); return 0; 
     }
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
         printf("\n==================================\n");
@@ -147,16 +161,15 @@ int main(int argc, char** argv) {
         printf("CLI Commands:\n");
         printf("  gage --version   : Show current version\n");
         printf("  gage help        : Show this manual\n\n");
-        printf("Language Features (v3.2.0):\n");
+        printf("Language Features (v3.3.0):\n");
         printf("  Variables        : let, const\n");
         printf("  Operators        : +, -, *, /, %%, **, %%=\n");
         printf("  Control Flow     : while loops, if/else\n");
-        printf("  Output           : print \"string\" or print var\n");
         printf("  Set 1 Math       : sqrt(), abs(), max(a,b), min(a,b)\n");
+        printf("  Set 2 System     : exec(\"cmd\"), sleep(sec), clear()\n");
         printf("==================================\n\n");
         return 0; 
     }
-
     if (argc < 2) { printf("Usage: gage <filename.gg>\nType 'gage help' for more info.\n"); return 1; }
     
     FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
@@ -172,7 +185,7 @@ int main(int argc, char** argv) {
     fclose(out_main);
     
     FILE* out_c = fopen(p_t, "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <math.h>\n#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\nint main(){");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\nint main(){");
     FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
     fprintf(out_c, "return 0;}"); fclose(out_c); free(src);
     

@@ -1,0 +1,7 @@
+clear()
+print "Hacking the mainframe..."
+sleep(1)
+print "Access Granted!"
+sleep(1)
+print "Running ls command in your terminal:"
+exec("ls")
