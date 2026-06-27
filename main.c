@@ -79,19 +79,18 @@ void compile_expression(FILE* out) {
     while (currentTokenIndex < tokenCount) {
         Token t = tokens[currentTokenIndex];
         
-        // Stop expression greediness if next statement keywords appear
+        // Strictly stop expressions before structural bounds or keywords
         if (t.type == TOKEN_PRINT || t.type == TOKEN_LET || t.type == TOKEN_WHILE || 
-            t.type == TOKEN_RBRACE || t.type == TOKEN_LBRACE) break;
+            t.type == TOKEN_RBRACE || t.type == TOKEN_LBRACE || 
+            t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN) break;
             
-        // Lookahead to prevent stealing an identity statement token (like x += 1)
         if (t.type == TOKEN_IDENT && currentTokenIndex + 1 < tokenCount) {
             TokenType next_t = tokens[currentTokenIndex + 1].type;
             if (next_t == TOKEN_ASSIGN || next_t == TOKEN_PLUS_ASSIGN) break;
         }
 
         if (t.type == TOKEN_INT || t.type == TOKEN_IDENT || t.type == TOKEN_PLUS || 
-            t.type == TOKEN_MINUS || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || 
-            t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN) {
+            t.type == TOKEN_MINUS || t.type == TOKEN_EQ || t.type == TOKEN_NEQ) {
             fprintf(out, "%s ", t.value);
             currentTokenIndex++;
         } else break;
