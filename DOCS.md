@@ -3,7 +3,7 @@
 ## 1. Introduction
 Gage is a high-performance, C-transpiled programming language optimized for Termux.
 
-## 2. Quick Start
+## 2. Getting Started
 1. Build: `make`
 2. Run: `gage script.gg`
 
@@ -44,4 +44,4 @@ The built-in linter checks for undeclared variables before transpilation starts.
 Future features include `fn` (functions), `structs`, and `arrays` (lists).
 
 ## 15. Summary
-Gage v3.4.1 is a powerful transpiler that bridges the gap between scripting convenience and C performance.
+Gage v3.4.1 is a complete, modular, and fast language system.
