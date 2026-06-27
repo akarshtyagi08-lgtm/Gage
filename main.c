@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 
-// --- TOKEN DEFINITIONS ---
+// --- STRUCTURES ---
 typedef enum {
     TOKEN_CONST, TOKEN_POW, TOKEN_MOD_ASSIGN, TOKEN_EOF, TOKEN_PRINT, TOKEN_LET, 
     TOKEN_IDENT, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING, TOKEN_TRUE, TOKEN_FALSE,
@@ -22,16 +22,7 @@ typedef enum {
 
 typedef struct { TokenType type; char value[256]; } Token;
 
-// --- GLOBAL VARIABLES (After Struct definition to fix compiler error) ---
-FILE *out_main;
-char *src; 
-int src_pos = 0, src_len = 0;
-Token tokens[10000]; 
-int tokenCount = 0, currentTokenIndex = 0;
-char declared_vars[1000][50]; 
-int declared_count = 0;
-
-// --- FUNCTION PROTOTYPES ---
+// --- PROTOTYPES (Fixes the implicit declaration error) ---
 void compile_statement(FILE* out);
 void compile_expression(FILE* out);
 void compile_block(FILE* out);
@@ -40,7 +31,16 @@ int is_declared(const char* name);
 void declare_var(const char* name);
 void throw_lint_error(const char* msg, const char* var_name);
 
-// --- FUNCTION IMPLEMENTATIONS ---
+// --- GLOBAL VARIABLES ---
+FILE *out_main;
+char *src; 
+int src_pos = 0, src_len = 0;
+Token tokens[10000]; 
+int tokenCount = 0, currentTokenIndex = 0;
+char declared_vars[1000][50]; 
+int declared_count = 0;
+
+// --- LOGIC IMPLEMENTATIONS ---
 int is_declared(const char* name) { for (int i = 0; i < declared_count; i++) if (strcmp(declared_vars[i], name) == 0) return 1; return 0; }
 void declare_var(const char* name) { strcpy(declared_vars[declared_count++], name); }
 void throw_lint_error(const char* msg, const char* var_name) { printf("\033[1;31m[Gage Linter Error]\033[0m %s '%s'\n", msg, var_name); exit(1); }
@@ -50,9 +50,7 @@ void tokenize() {
         char c = src[src_pos];
         if (isspace(c)) { src_pos++; continue; }
         if (c == '|' && src_pos + 1 < src_len && src[src_pos+1] == '|') {
-            src_pos += 2;
-            while (src_pos < src_len && !(src[src_pos] == '|' && src[src_pos+1] == '|')) src_pos++;
-            src_pos += 2; continue;
+            src_pos += 2; while (src_pos < src_len && !(src[src_pos] == '|' && src[src_pos+1] == '|')) src_pos++; src_pos += 2; continue;
         }
         if (c == '"') { src_pos++; int t_idx = 0; Token t; t.type = TOKEN_STRING; while (src_pos < src_len && src[src_pos] != '"') t.value[t_idx++] = src[src_pos++]; t.value[t_idx] = '\0'; tokens[tokenCount++] = t; src_pos++; continue; }
         if (isdigit(c)) { int start = src_pos; int has_dot = 0; while (src_pos < src_len && (isdigit(src[src_pos]) || src[src_pos] == '.')) { if (src[src_pos] == '.') has_dot = 1; src_pos++; } Token t; t.type = has_dot ? TOKEN_FLOAT : TOKEN_INT; int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0'; tokens[tokenCount++] = t; continue; }
@@ -78,38 +76,44 @@ void tokenize() {
 Token peek_token() { return (currentTokenIndex >= tokenCount) ? tokens[tokenCount - 1] : tokens[currentTokenIndex]; }
 Token next_token() { Token t = peek_token(); if (currentTokenIndex < tokenCount) currentTokenIndex++; return t; }
 
-int is_std_func(const char* name) { const char* std_funcs[] = {"abs", "sqrt", "max", "min", "sin", "cos", "tan", "log", "ceil", "floor", "round", "randint", "rand_float", "timestamp", "clock_ticks", "str_len"}; for(int i=0; i<16; i++) if (strcmp(name, std_funcs[i]) == 0) return 1; return 0; }
-
 void compile_expression(FILE* out) {
-    int expect_operator = 0; int paren_depth = 0;
     while (currentTokenIndex < tokenCount) {
         Token t = peek_token();
-        int is_operand = (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT);
-        if (expect_operator && is_operand) break; 
         if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_AND || t.type == TOKEN_OR_OP) {
             fprintf(out, "%s ", next_token().value);
-            expect_operator = (t.type == TOKEN_IDENT || t.type == TOKEN_INT || t.type == TOKEN_FLOAT);
         } else break;
     }
 }
 
-void compile_block(FILE* out) { next_token(); while (currentTokenIndex < tokenCount) { Token t = peek_token(); if (t.type == TOKEN_RBRACE) { next_token(); fprintf(out, "}\n"); break; } if (t.type == TOKEN_EOF) break; compile_statement(out); } }
+void compile_block(FILE* out) {
+    next_token();
+    while (currentTokenIndex < tokenCount) {
+        Token t = peek_token();
+        if (t.type == TOKEN_RBRACE) { next_token(); fprintf(out, "}\n"); break; }
+        if (t.type == TOKEN_EOF) break;
+        compile_statement(out);
+    }
+}
 
 void compile_statement(FILE* out) {
     Token tok = next_token();
-    if (tok.type == TOKEN_LET) { Token name = next_token(); next_token(); fprintf(out, "int %s = ", name.value); compile_expression(out); fprintf(out, ";\n"); declare_var(name.value); }
-    else if (tok.type == TOKEN_PRINT) { fprintf(out, "printf(\"%%d\\n\", "); compile_expression(out); fprintf(out, ");\n"); }
+    if (tok.type == TOKEN_PRINT) { fprintf(out, "printf(\"%%d\\n\", "); compile_expression(out); fprintf(out, ");\n"); }
+    else if (tok.type == TOKEN_LET) { Token name = next_token(); next_token(); fprintf(out, "int %s = ", name.value); compile_expression(out); fprintf(out, ";\n"); declare_var(name.value); }
     else if (tok.type == TOKEN_WHILE) { fprintf(out, "while("); compile_expression(out); fprintf(out, "){\n"); compile_block(out); }
+    else if (tok.type == TOKEN_EXEC) { next_token(); Token cmd = next_token(); fprintf(out, "system(\"%s\");\n", cmd.value); next_token(); }
     else if (tok.type == TOKEN_IMPORT) { Token mod = next_token(); fprintf(out, "// GAGE IMPORTED MODULE: %s\n", mod.value); if (strcmp(mod.value, "random") == 0) fprintf(out, "srand(time(NULL));\n"); }
+    else if (tok.type == TOKEN_COLOR) { fprintf(out, "printf(\"\\033[%%dm\", "); compile_expression(out); fprintf(out, ");\n"); }
+    else if (tok.type == TOKEN_CLEAR) { fprintf(out, "system(\"clear\");\n"); }
+    else if (tok.type == TOKEN_DELAY) { fprintf(out, "usleep("); compile_expression(out); fprintf(out, "*1000);\n"); }
 }
 
 int main(int argc, char** argv) {
     if (argc < 2) return 1;
-    FILE* file = fopen(argv[1], "r"); fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET); src = malloc(src_len + 1); fread(src, 1, src_len, file); fclose(file); src[src_len] = '\0';
+    FILE* file = fopen(argv[1], "r"); if(!file) return 1; fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET); src = malloc(src_len + 1); fread(src, 1, src_len, file); fclose(file); src[src_len] = '\0';
     tokenize(); char p_m[] = ".gm.c", p_t[] = ".gt.c", p_e[] = ".ge";
     out_main = fopen(p_m, "w"); while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) compile_statement(out_main); fclose(out_main);
     FILE* out_c = fopen(p_t, "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\nint main(){");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\n#include <unistd.h>\nint main(){");
     FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
     fprintf(out_c, "return 0;}"); fclose(out_c);
     char cmd[1024]; sprintf(cmd, "clang %s -o %s && %s", p_t, p_e, p_e); system(cmd); return 0;

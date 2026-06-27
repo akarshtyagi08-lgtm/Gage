@@ -1,9 +1,9 @@
-# Gage Programming Language: Master Encyclopedia v3.4.1
+# Gage Programming Language v3.4.1: The Master Encyclopedia
 
 ## 1. Introduction
-Gage is a high-performance, C-transpiled programming language optimized for Termux.
+Gage is a high-performance, C-transpiled programming language optimized for mobile.
 
-## 2. Getting Started
+## 2. Quick Start
 1. Build: `make`
 2. Run: `gage script.gg`
 
