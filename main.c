@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 
-// --- STRUCTURES ---
+// --- TOKEN DEFINITIONS ---
 typedef enum {
     TOKEN_CONST, TOKEN_POW, TOKEN_MOD_ASSIGN, TOKEN_EOF, TOKEN_PRINT, TOKEN_LET, 
     TOKEN_IDENT, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING, TOKEN_TRUE, TOKEN_FALSE,
@@ -22,15 +22,6 @@ typedef enum {
 
 typedef struct { TokenType type; char value[256]; } Token;
 
-// --- PROTOTYPES (Fixes the implicit declaration error) ---
-void compile_statement(FILE* out);
-void compile_expression(FILE* out);
-void compile_block(FILE* out);
-void tokenize();
-int is_declared(const char* name);
-void declare_var(const char* name);
-void throw_lint_error(const char* msg, const char* var_name);
-
 // --- GLOBAL VARIABLES ---
 FILE *out_main;
 char *src; 
@@ -39,6 +30,15 @@ Token tokens[10000];
 int tokenCount = 0, currentTokenIndex = 0;
 char declared_vars[1000][50]; 
 int declared_count = 0;
+
+// --- PROTOTYPES ---
+void compile_statement(FILE* out);
+void compile_expression(FILE* out);
+void compile_block(FILE* out);
+void tokenize();
+int is_declared(const char* name);
+void declare_var(const char* name);
+void throw_lint_error(const char* msg, const char* var_name);
 
 // --- LOGIC IMPLEMENTATIONS ---
 int is_declared(const char* name) { for (int i = 0; i < declared_count; i++) if (strcmp(declared_vars[i], name) == 0) return 1; return 0; }
@@ -101,14 +101,18 @@ void compile_statement(FILE* out) {
     else if (tok.type == TOKEN_LET) { Token name = next_token(); next_token(); fprintf(out, "int %s = ", name.value); compile_expression(out); fprintf(out, ";\n"); declare_var(name.value); }
     else if (tok.type == TOKEN_WHILE) { fprintf(out, "while("); compile_expression(out); fprintf(out, "){\n"); compile_block(out); }
     else if (tok.type == TOKEN_EXEC) { next_token(); Token cmd = next_token(); fprintf(out, "system(\"%s\");\n", cmd.value); next_token(); }
-    else if (tok.type == TOKEN_IMPORT) { Token mod = next_token(); fprintf(out, "// GAGE IMPORTED MODULE: %s\n", mod.value); if (strcmp(mod.value, "random") == 0) fprintf(out, "srand(time(NULL));\n"); }
+    else if (tok.type == TOKEN_IMPORT) { Token mod = next_token(); fprintf(out, "// Module: %s\n", mod.value); if(strcmp(mod.value, "random")==0) fprintf(out, "srand(time(NULL));\n"); }
     else if (tok.type == TOKEN_COLOR) { fprintf(out, "printf(\"\\033[%%dm\", "); compile_expression(out); fprintf(out, ");\n"); }
     else if (tok.type == TOKEN_CLEAR) { fprintf(out, "system(\"clear\");\n"); }
     else if (tok.type == TOKEN_DELAY) { fprintf(out, "usleep("); compile_expression(out); fprintf(out, "*1000);\n"); }
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2) return 1;
+    if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) {
+        printf("\n=== GAGE v3.4.1 HELP ===\nCommands: gage <file.gg>\nFeatures: let, print, while, exec, import, color, clear, delay.\nSee DOCS.md for details.\n\n");
+        return 0;
+    }
+    if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     FILE* file = fopen(argv[1], "r"); if(!file) return 1; fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET); src = malloc(src_len + 1); fread(src, 1, src_len, file); fclose(file); src[src_len] = '\0';
     tokenize(); char p_m[] = ".gm.c", p_t[] = ".gt.c", p_e[] = ".ge";
     out_main = fopen(p_m, "w"); while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) compile_statement(out_main); fclose(out_main);
