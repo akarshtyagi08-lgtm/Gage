@@ -1,4 +1,4 @@
-# Gage Programming Language v3.3.2 Documentation
+# Gage Programming Language v3.3.3 Documentation
 Welcome to the official documentation for Gage.
 
 ## Table of Contents
@@ -7,16 +7,18 @@ Welcome to the official documentation for Gage.
  3. Variables & Constants
  4. Arithmetic & Math (Set 1)
  5. System Automation (Set 2)
- 6. Control Flow
- 7. Changelog (v3.3.2)
+ 6. Game Dev & Graphics (Set 3)
+ 7. Control Flow
+ 8. Changelog (v3.3.3)
 
-## 5. System Automation (Set 2)
-Gage supports direct interaction with the OS shell:
- * **exec("command")**: Executes a terminal command. (e.g., `exec("ls -l")`)
- * **sleep(seconds)**: Pauses script execution. (e.g., `sleep(2)`)
- * **clear()**: Clears the terminal screen.
+## 6. Game Dev & Graphics (Set 3)
+Gage supports direct ANSI terminal manipulation for rendering games and animations:
+ * **render "string"**: Draws output without a trailing newline.
+ * **cursor(x, y)**: Moves the drawing cursor to a specific screen coordinate.
+ * **color(code)**: Changes text color (e.g., 31=Red, 32=Green, 34=Blue, 0=Reset).
+ * **delay(ms)**: Pauses execution for precise milliseconds (better than sleep).
+ * **hide_cursor() / show_cursor()**: Toggles terminal cursor visibility.
 
-## 7. Changelog (v3.3.2)
- * **Version Alignment**: Version bumped to 3.3.2 across the compiler binary, help menu, and documentation.
- * **System Suite (Set 2)**: Fully operational `exec`, `sleep`, and `clear`.
- * **Bracket Hotfix**: Solved parameter nesting bugs for cleaner expression boundaries.
+## 8. Changelog (v3.3.3)
+ * **Game Dev Suite (Set 3)**: Added terminal graphics Engine (`render`, `cursor`, `color`, `delay`, `hide_cursor`, `show_cursor`).
+ * **Version Bump**: Updated all help menus and docs to v3.3.3.

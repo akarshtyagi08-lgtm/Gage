@@ -18,7 +18,8 @@ typedef enum {
     TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_NEQ, TOKEN_INPUT,
     TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_COMMA, TOKEN_ELIF, TOKEN_FOR, TOKEN_BREAK, 
     TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT, TOKEN_FN, TOKEN_RETURN,
-    TOKEN_EXEC, TOKEN_SLEEP, TOKEN_CLEAR
+    TOKEN_EXEC, TOKEN_SLEEP, TOKEN_CLEAR, 
+    TOKEN_RENDER, TOKEN_CURSOR, TOKEN_COLOR, TOKEN_DELAY, TOKEN_HIDE_CURSOR, TOKEN_SHOW_CURSOR
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
@@ -50,6 +51,12 @@ void tokenize() {
             else if (strcmp(t.value, "exec") == 0) t.type = TOKEN_EXEC;
             else if (strcmp(t.value, "sleep") == 0) t.type = TOKEN_SLEEP;
             else if (strcmp(t.value, "clear") == 0) t.type = TOKEN_CLEAR;
+            else if (strcmp(t.value, "render") == 0) t.type = TOKEN_RENDER;
+            else if (strcmp(t.value, "cursor") == 0) t.type = TOKEN_CURSOR;
+            else if (strcmp(t.value, "color") == 0) t.type = TOKEN_COLOR;
+            else if (strcmp(t.value, "delay") == 0) t.type = TOKEN_DELAY;
+            else if (strcmp(t.value, "hide_cursor") == 0) t.type = TOKEN_HIDE_CURSOR;
+            else if (strcmp(t.value, "show_cursor") == 0) t.type = TOKEN_SHOW_CURSOR;
             else t.type = TOKEN_IDENT; 
             tokens[tokenCount++] = t; continue; 
         }
@@ -130,16 +137,31 @@ void compile_block(FILE* out) {
 
 void compile_statement(FILE* out) {
     Token tok = next_token();
-    if (tok.type == TOKEN_PRINT) {
+    if (tok.type == TOKEN_PRINT || tok.type == TOKEN_RENDER) {
         int has_paren = 0;
         if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
         Token next = peek_token();
+        const char* end_char = (tok.type == TOKEN_PRINT) ? "\\n" : "";
         if (next.type == TOKEN_STRING) { 
-            next_token(); fprintf(out, "printf(\"%%s\\n\", \"%s\");\n", next.value); 
+            next_token(); fprintf(out, "printf(\"%%s%s\", \"%s\");\n", end_char, next.value); 
         } else { 
-            fprintf(out, "printf(\"%%g\\n\", (double)("); compile_expression(out); fprintf(out, "));\n"); 
+            fprintf(out, "printf(\"%%g%s\", (double)(" , end_char); compile_expression(out); fprintf(out, "));\n"); 
         }
+        if (tok.type == TOKEN_RENDER) fprintf(out, "fflush(stdout);\n"); // Force print instantly for game loops
         if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+
+    } else if (tok.type == TOKEN_DELAY || tok.type == TOKEN_COLOR || tok.type == TOKEN_CURSOR || tok.type == TOKEN_HIDE_CURSOR || tok.type == TOKEN_SHOW_CURSOR) {
+        int has_paren = 0;
+        if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        
+        fprintf(out, "%s(", tok.value);
+        if (tok.type != TOKEN_HIDE_CURSOR && tok.type != TOKEN_SHOW_CURSOR) {
+            compile_expression(out);
+        }
+        fprintf(out, ");\n");
+        
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+
     } else if (tok.type == TOKEN_CLEAR) {
         fprintf(out, "system(\"clear\");\n");
         if (peek_token().type == TOKEN_LPAREN) { next_token(); if (peek_token().type == TOKEN_RPAREN) next_token(); }
@@ -171,7 +193,7 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
-        printf("Gage Programming Language v3.3.2\n"); return 0; 
+        printf("Gage Programming Language v3.3.3\n"); return 0; 
     }
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
         printf("\n==================================\n");
@@ -181,12 +203,11 @@ int main(int argc, char** argv) {
         printf("CLI Commands:\n");
         printf("  gage --version   : Show current version\n");
         printf("  gage help        : Show this manual\n\n");
-        printf("Language Features (v3.3.2):\n");
-        printf("  Variables        : let, const\n");
-        printf("  Operators        : +, -, *, /, %%, **, %%=\n");
-        printf("  Control Flow     : while loops, if/else\n");
-        printf("  Set 1 Math       : sqrt(), abs(), max(a,b), min(a,b)\n");
-        printf("  Set 2 System     : exec(\"cmd\"), sleep(sec), clear()\n");
+        printf("Language Features (v3.3.3):\n");
+        printf("  Set 1 Math       : sqrt(), abs(), max(), min()\n");
+        printf("  Set 2 System     : exec(), sleep(), clear()\n");
+        printf("  Set 3 Game Dev   : render, delay(ms), color(c)\n");
+        printf("                     cursor(x,y), hide_cursor()\n");
         printf("==================================\n\n");
         return 0; 
     }
@@ -205,7 +226,16 @@ int main(int argc, char** argv) {
     fclose(out_main);
     
     FILE* out_c = fopen(p_t, "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\nint main(){");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n");
+    fprintf(out_c, "#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\n");
+    // Injecting Set 3 Macros directly into the native C backend!
+    fprintf(out_c, "#define delay(ms) usleep((unsigned int)(ms) * 1000)\n");
+    fprintf(out_c, "#define color(c) printf(\"\\033[%%dm\", (int)(c))\n");
+    fprintf(out_c, "#define cursor(x,y) printf(\"\\033[%%d;%%dH\", (int)(y), (int)(x))\n");
+    fprintf(out_c, "#define hide_cursor() printf(\"\\033[?25l\")\n");
+    fprintf(out_c, "#define show_cursor() printf(\"\\033[?25h\")\n");
+    fprintf(out_c, "int main(){");
+    
     FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
     fprintf(out_c, "return 0;}"); fclose(out_c); free(src);
     
