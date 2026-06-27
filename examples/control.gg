@@ -1,0 +1,38 @@
+|| -------------------------------------------------- ||
+|| Gage Programming Language: Complex Control Flow    ||
+|| -------------------------------------------------- ||
+
+print "--- EXECUTION BRANCH EVALUATION ACTIVE ---"
+
+|| Defining static operational metrics evaluation variable ||
+let system_temperature = 92.4
+
+|| Multi branch logical evaluation sequence with explicit elif ||
+if (system_temperature > 100.0) {
+    print "CRITICAL CRASH DANGER DETECTED"
+} elif (system_temperature > 85.0 or system_temperature == 90.0) {
+    print "WARNING: TEMPERATURE LIMIT WARNING RUNNING"
+} else {
+    print "SYSTEM OPERATING IN SAFE ZONE"
+}
+
+|| Defining branch routing code for branch matching tests ||
+let process_state_token = 2
+
+|| Fast switch case structure utilizing safe block allocations ||
+switch (process_state_token) {
+    case 0 {
+        print "STATE CODE 0: ENGINE KILLED"
+    }
+    case 1 {
+        print "STATE CODE 1: ENGINE LAUNCHED"
+    }
+    case 2 {
+        print "STATE CODE 2: ENGINE SUSPENDED"
+    }
+    default {
+        print "UNKNOWN ALTERNATIVE STATE CODE"
+    }
+}
+
+print "--- FORK ROUTING PROCESSES COMPLETED ---"

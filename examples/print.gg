@@ -1,0 +1,18 @@
+|| -------------------------------------------------- ||
+|| Gage Programming Language: Comprehensive Print Demo ||
+|| -------------------------------------------------- ||
+
+print "--- STARTING PRINT SUBSYSTEM BENCHMARK ---"
+
+|| Printing standard raw text streams with native newline parsing ||
+print "System Initialized Successfully\n"
+
+|| Declaring and printing variable state holding parameters ||
+let output_channel_index = 404
+print output_channel_index
+
+|| Printing inline calculated mathematical evaluations directly ||
+print (500 * 2) + 15 - (50 / 2)
+
+|| Printing string buffers right after math sequences ||
+print "--- END OF PRINT TESTS ---"

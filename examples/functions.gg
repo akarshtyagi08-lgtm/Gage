@@ -1,0 +1,32 @@
+|| -------------------------------------------------- ||
+|| Gage Programming Language: Custom Functions Demo   ||
+|| -------------------------------------------------- ||
+
+print "--- TESTING LOCAL FUNCTIONS & RETURNS ---"
+
+|| Defining a simple parameterized function to return a calculated integer ||
+fn multiply_and_add(x, y, bonus) {
+    let result = (x * y) + bonus
+    return result
+}
+
+|| Passing static literal values into the function map ||
+let final_score = multiply_and_add(10, 5, 20)
+print final_score
+
+print "--- TESTING RECURSION ALGORITHMS ---"
+
+|| Establishing a recursive structure to calculate mathematical sequences ||
+fn fibonacci(n) {
+    if (n < 2) {
+        return n
+    }
+    || Call stack recursively splits out to trace base layers ||
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+print "Generating 10th Sequence:"
+let sequence_output = fibonacci(10)
+print sequence_output
+
+print "--- FUNCTIONAL OPERATIONS COMPLETE ---"

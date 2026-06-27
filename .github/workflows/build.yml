@@ -1,0 +1,33 @@
+name: Build Gage Releases
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Compile Code (Linux/Mac)
+      if: matrix.os != 'windows-latest'
+      run: gcc main.c lexer.c -o gage
+      
+    - name: Compile Code (Windows)
+      if: matrix.os == 'windows-latest'
+      run: gcc main.c lexer.c -o gage.exe
+
+    - name: Upload Finished Executable
+      uses: actions/upload-artifact@v3
+      with:
+        name: gage-${{ matrix.os }}
+        path: |
+          gage
+          gage.exe
+
