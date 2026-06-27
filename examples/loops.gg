@@ -1,10 +1,30 @@
-print "--- Testing Gage Loops & Advanced Control ---"
-for (let i = 0, i < 10, i += 1) {
-    if (i == 5) {
+|| -------------------------------------------------- ||
+|| Gage Programming Language: Iteration Loops Control ||
+|| -------------------------------------------------- ||
+
+print "--- INITIALIZING HIGH SPEED ITERATION PATTERNS ---"
+
+|| Standard counting loop using comma statement breakdown separators ||
+for (let iterator = 1, iterator < 15, iterator += 1) {
+    
+    || Condition block to skip current loop step using continue ||
+    if (iterator == 5) {
         continue
     }
-    if (i == 8) {
+    
+    || Condition block to instantly exit loop execution sequence ||
+    if (iterator == 12) {
         break
     }
-    print i
+    
+    print iterator
 }
+
+|| Secondary fallback verification loop sequence ||
+let execution_tracker = 0
+while (execution_tracker < 5) {
+    execution_tracker += 1
+    print execution_tracker
+}
+
+print "--- ITERATION LOOP METRICS COMPLETED ---"

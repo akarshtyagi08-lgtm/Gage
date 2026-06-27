@@ -1,8 +1,27 @@
-print "--- Testing Gage Math & Shorthands ---"
-let x = 10.5
-let y = 3
-print x + y
-x += 5
-print x
-let rem = 14 % 3
-print rem
+|| -------------------------------------------------- ||
+|| Gage Programming Language: Advanced Mathematics    ||
+|| -------------------------------------------------- ||
+
+print "--- RUNNING MATHEMATICAL ARITHMETIC METRICS ---"
+
+|| Native Float precision assignment initialization ||
+let primary_float = 10.5
+let secondary_float = 20.25
+print primary_float + secondary_float
+
+|| High-speed primitive integer data assignments ||
+let total_score = 1000
+let penalty_points = 150
+
+|| Executing native update assignment shorthand operations ||
+total_score += 500
+total_score -= penalty_points
+total_score *= 2
+total_score /= 3
+print total_score
+
+|| Verifying high speed structural remainder math processing ||
+let core_remainder = 17 % 5
+print core_remainder
+
+print "--- MATHEMATICS VALIDATION COMPLETE ---"
