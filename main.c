@@ -233,10 +233,21 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) {
-        printf("\n=== GAGE v3.4.1 HELP ===\nCommands: gage <file.gg>\nFeatures: let, print, while, exec, import, color, clear, delay.\nSee DOCS.md for details.\n\n");
+        printf("\n=== GAGE v3.4.1 HELP ===\n");
+        printf("Usage: gage <script.gg>\n\n");
+        printf("Commands & Features:\n");
+        printf("  let [var] = [val]  - Declare variable\n");
+        printf("  print [val]        - Print value to terminal\n");
+        printf("  while (cond) { }   - Control flow\n");
+        printf("  exec [cmd]         - Run shell command\n");
+        printf("  import [mod]       - Import module (e.g. random)\n");
+        printf("  color [val]        - Change UI color\n");
+        printf("  clear              - Clear terminal\n");
+        printf("  delay [ms]         - Pause execution\n");
+        printf("  render [text]      - Display UI text\n\n");
+        printf("Docs & Issues: https://github.com/akarshtyagi08-lgtm/Gage\n\n");
         return 0;
     }
-    // FIXED: Now supports -v and --version
     if (argc == 2 && (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
         printf("Gage Compiler v3.4.1\n");
         return 0;
