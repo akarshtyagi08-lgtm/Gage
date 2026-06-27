@@ -1,6 +1,6 @@
 # The Official Gage Language Guide
 
-Welcome to Gage! This guide covers all the syntax, rules, and commands you need to write powerful scripts.
+Welcome to Gage! Gage is a fully compiled programming language. This guide covers all the syntax, rules, and commands you need to write powerful scripts.
 
 ---
 
@@ -98,4 +98,4 @@ Use the `input` keyword to get values from the user.
 1. **No semicolons:** Do not put `;` at the end of lines!
 2. **Case-sensitive:** `let X` and `let x` are different.
 3. **Mandatory extension:** All source files must end with the `.gg` extension.
-
+4. **Compiled language:** Gage is a fully compiled language, executing code directly as native machine binary.
