@@ -44,6 +44,15 @@ void tokenize() {
         char c = src[src_pos];
         if (isspace(c)) { src_pos++; continue; }
         
+        if (c == '|' && src_pos + 2 < src_len && src[src_pos+1] == '|' && src[src_pos+2] == '|') {
+            src_pos += 3;
+            while (src_pos < src_len && !(src[src_pos] == '|' && src[src_pos+1] == '|' && src[src_pos+2] == '|')) {
+                src_pos++;
+            }
+            src_pos += 3;
+            continue;
+        }
+
         if (c == '|' && src_pos + 1 < src_len && src[src_pos+1] == '|') {
             src_pos += 2;
             while (src_pos < src_len && !(src[src_pos] == '|' && src[src_pos+1] == '|')) src_pos++;
@@ -358,7 +367,7 @@ void compile_block(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v3.0.0\n"); return 0;
+        printf("Gage Programming Language v3.1.0\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');
