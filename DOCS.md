@@ -1,47 +1,113 @@
-# Gage Programming Language v3.4.1: Master Encyclopedia
+# Gage Programming Language - Master Documentation (v3.4.1)
 
 ## 1. Introduction
-Gage is a high-performance, C-transpiled programming language optimized for Termux.
+Gage is a high-performance, C-inspired programming language built for efficiency and direct hardware control. Designed as a lightweight compiler, Gage translates your script into an intermediate C source code, which is then compiled using Clang.
 
-## 2. Quick Start
-1. Build: `make`
-2. Run: `gage script.gg`
+## 2. Table of Contents
+1. Installation & Environment Setup
+2. Writing Your First Script
+3. Variable Declaration (let)
+4. Standard Output (print)
+5. Mathematical Operations
+6. Control Flow: While Loops
+7. Control Flow: If/Else/Elif Statements
+8. Control Flow: For Loops
+9. System Interfacing (exec)
+10. UI Control: Color and Clear
+11. Cursor Management
+12. Time Management (sleep/delay)
+13. Modular Programming (import)
+14. Advanced Compiler Features
+15. Troubleshooting & FAQ
 
-## 3. Syntax Philosophy
-Gage prioritizes readable syntax that feels like a scripting language but executes like compiled binary code.
+---
 
-## 4. Tokenization Engine
-The lexer transforms raw text into discrete tokens (TOKEN_PRINT, TOKEN_LET, etc.) to build a stream for the compiler.
+## 3. Installation & Environment Setup
+Ensure your environment has Clang installed. Gage generates `.gm.c` and `.gt.c` files during compilation. Ensure these files have read/write permissions in your `/sdcard/GAGE/` directory.
 
-## 5. Memory Model
-Gage uses static allocation during transpilation to ensure zero-cost abstractions for simple scripts.
+## 4. Writing Your First Script
+Create a file with the `.gg` extension (e.g., `test.gg`). 
+- Syntax: `print 1`
+- Execution: `gage test.gg`
 
-## 6. Variables & Constants
-let for mutable values; const for immutable ones. All variables are tracked by the compiler's symbol table.
+## 5. Variable Declaration (let)
+Gage uses `let` for defining integers.
+- Syntax: `let variable_name = value`
+- Example: `let score = 100`
+- Rules: Names must be alphanumeric and can contain underscores.
 
-## 7. Comments
-Gage supports block-level documentation using || ... ||. These are ignored by the compiler.
+## 6. Standard Output (print)
+Outputs values to the terminal.
+- Behavior: Every `print` call appends a newline (`\n`) automatically.
+- Example: `print 50`
 
-## 8. Logical Operators
-We support && (AND) and OR (OR) for complex boolean expressions.
+## 7. Mathematical Operations
+Gage supports basic arithmetic operators:
+- `+` : Addition
+- `-` : Subtraction
+- `*` : Multiplication
+- `/` : Division
+- `%` : Modulo
 
-## 9. Math Library (Set 1)
-Integrates with C math libraries for high-precision arithmetic.
+## 8. Control Flow: While Loops
+Used for repeating blocks of code based on a condition.
+- Syntax: 
+  while (condition) {
+      statement
+  }
 
-## 10. System Automation (Set 2)
-Gage can call exec(), sleep(), and clear() to control the shell.
+## 9. Control Flow: If/Else/Elif
+Logic branches allow for conditional execution.
+- Syntax:
+  if (condition) {
+      // code
+  } elif (condition) {
+      // code
+  } else {
+      // code
+  }
 
-## 11. Graphics Engine (Set 3)
-Supports ANSI escape sequences for rendering dynamic terminal UIs.
+## 10. Control Flow: For Loops
+Ideal for iteration over ranges or animation frames. 
 
-## 12. Module Imports (Set 4)
-Import standard libs with import [name] (e.g., import random).
+## 11. System Interfacing (exec)
+Executes system commands.
+- Syntax: `exec "command"`
+- Example: `exec "clear"`
 
-## 13. Linting & Safety
-The built-in linter checks for undeclared variables before transpilation starts.
+## 12. UI Control: Color and Clear
+- `color [code]`: Changes terminal text color.
+- `clear`: Wipes the console buffer.
 
-## 14. Roadmap
-Future features include fn (functions), structs, and arrays (lists).
+## 13. Cursor Management
+- `hide_cursor`: Makes the terminal cursor invisible.
+- `show_cursor`: Resets the terminal cursor.
+- `cursor`: Places the cursor at specific coordinates.
 
-## 15. Summary
-Gage v3.4.1 is a complete, modular, and fast language system.
+## 14. Time Management
+- `delay [ms]`: Pause in milliseconds. Uses `usleep`.
+- `sleep [s]`: Pause in seconds.
+
+## 15. Modular Programming (import)
+The modular system allows extending the core language.
+- Structure: Place module files in `/sdcard/GAGE/modules/`.
+- Usage: `import random`
+- Implementation: The compiler reads `modules/[name].c` and injects code.
+
+---
+
+## 16. Advanced Features
+- Tokenization: The compiler uses a custom tokenizer to handle `|` operators, string literals, and whitespace.
+- Intermediate Files: The compiler generates `.gm.c` and `.gt.c` during the build process.
+
+## 17. Troubleshooting & FAQ
+- Q: My code isn't running? 
+  A: Check for syntax errors in your `.gg` file. Ensure you are in the `/sdcard/GAGE` directory.
+- Q: Why are modules not importing? 
+  A: Ensure the file exists at `/sdcard/GAGE/modules/[name].c`.
+- Q: How to check version? 
+  A: Type `gage -v` or `gage --version`.
+
+---
+GitHub Repository: https://github.com/akarshtyagi08-lgtm/Gage
+Note: Gage is an evolving language. Suggestions for new tokens or modules can be submitted via Pull Requests.
