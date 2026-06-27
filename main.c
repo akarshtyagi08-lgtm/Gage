@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
     FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
     fprintf(out_c, "return 0;}"); fclose(out_c); free(src);
     
-    char cmd[1024]; sprintf(cmd, "clang -O0 %s -o %s -lm && %s", p_t, p_e, p_e);
+    char cmd[1024]; sprintf(cmd, "clang -O0 -w %s -o %s -lm && %s", p_t, p_e, p_e);
     system(cmd);
     char clean[1024]; sprintf(clean, "rm -f %s %s %s", p_m, p_t, p_e);
     system(clean); return 0;
