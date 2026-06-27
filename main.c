@@ -67,7 +67,14 @@ void compile_expression(FILE* out) {
         
         if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || t.type == TOKEN_LT || t.type == TOKEN_GT || t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA) {
             fprintf(out, "%s ", next_token().value);
-            if (t.type != TOKEN_LPAREN && t.type != TOKEN_RPAREN && t.type != TOKEN_COMMA) expect_operator = is_operand;
+            // Parentheses boundary structural handling
+            if (t.type == TOKEN_LPAREN || t.type == TOKEN_COMMA) {
+                expect_operator = 0;
+            } else if (t.type == TOKEN_RPAREN) {
+                expect_operator = 1;
+            } else {
+                expect_operator = is_operand;
+            }
         } else if (t.type == TOKEN_IDENT) {
             if (currentTokenIndex + 1 < tokenCount) {
                 TokenType nt = tokens[currentTokenIndex + 1].type;
@@ -128,13 +135,10 @@ void compile_statement(FILE* out) {
 }
 
 int main(int argc, char** argv) {
-    // 1. Version Menu
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
         printf("Gage Programming Language v3.2.0\n"); 
         return 0; 
     }
-    
-    // 2. Help Menu
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
         printf("\n==================================\n");
         printf("       GAGE COMPILER HELP\n");
