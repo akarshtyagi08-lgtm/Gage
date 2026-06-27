@@ -73,7 +73,6 @@ void compile_expression(FILE* out) {
                 TokenType nt = tokens[currentTokenIndex + 1].type;
                 if (nt == TOKEN_ASSIGN || nt == TOKEN_MOD_ASSIGN || nt == TOKEN_PLUS_ASSIGN || nt == TOKEN_MINUS_ASSIGN) break;
             }
-            // Map common math to C math.h equivalents
             if (strcmp(t.value, "abs") == 0) fprintf(out, "fabs ");
             else fprintf(out, "%s ", t.value);
             next_token();
@@ -129,11 +128,32 @@ void compile_statement(FILE* out) {
 }
 
 int main(int argc, char** argv) {
+    // 1. Version Menu
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
         printf("Gage Programming Language v3.2.0\n"); 
         return 0; 
     }
-    if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
+    
+    // 2. Help Menu
+    if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
+        printf("\n==================================\n");
+        printf("       GAGE COMPILER HELP\n");
+        printf("==================================\n");
+        printf("Usage: gage <filename.gg>\n\n");
+        printf("CLI Commands:\n");
+        printf("  gage --version   : Show current version\n");
+        printf("  gage help        : Show this manual\n\n");
+        printf("Language Features (v3.2.0):\n");
+        printf("  Variables        : let, const\n");
+        printf("  Operators        : +, -, *, /, %%, **, %%=\n");
+        printf("  Control Flow     : while loops, if/else\n");
+        printf("  Output           : print \"string\" or print var\n");
+        printf("  Set 1 Math       : sqrt(), abs(), max(a,b), min(a,b)\n");
+        printf("==================================\n\n");
+        return 0; 
+    }
+
+    if (argc < 2) { printf("Usage: gage <filename.gg>\nType 'gage help' for more info.\n"); return 1; }
     
     FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
     fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET);
