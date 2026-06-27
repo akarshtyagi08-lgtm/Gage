@@ -12,7 +12,8 @@ typedef enum {
     TOKEN_IF, TOKEN_ELSE, TOKEN_WHILE, TOKEN_LPAREN, TOKEN_RPAREN,
     TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_NEQ, TOKEN_INPUT,
     TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_COMMA,
-    TOKEN_ELIF, TOKEN_FOR, TOKEN_BREAK, TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT
+    TOKEN_ELIF, TOKEN_FOR, TOKEN_BREAK, TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT,
+    TOKEN_FN, TOKEN_RETURN
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
@@ -24,6 +25,8 @@ int tokenCount = 0, currentTokenIndex = 0;
 
 char declared_vars[1000][50];
 int declared_count = 0;
+
+FILE *out_funcs, *out_main;
 
 int is_declared(const char* name) {
     for (int i = 0; i < declared_count; i++) {
@@ -87,6 +90,8 @@ void tokenize() {
             else if (strcmp(t.value, "switch") == 0) t.type = TOKEN_SWITCH;
             else if (strcmp(t.value, "case") == 0) t.type = TOKEN_CASE;
             else if (strcmp(t.value, "default") == 0) t.type = TOKEN_DEFAULT;
+            else if (strcmp(t.value, "fn") == 0) t.type = TOKEN_FN;
+            else if (strcmp(t.value, "return") == 0) t.type = TOKEN_RETURN;
             else if (strcmp(t.value, "input") == 0) t.type = TOKEN_INPUT;
             else if (strcmp(t.value, "true") == 0) { t.type = TOKEN_TRUE; strcpy(t.value, "1"); }
             else if (strcmp(t.value, "false") == 0) { t.type = TOKEN_FALSE; strcpy(t.value, "0"); }
@@ -142,7 +147,7 @@ void compile_expression(FILE* out) {
             t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || 
             t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD ||
             t.type == TOKEN_AND || t.type == TOKEN_OR || t.type == TOKEN_NOT ||
-            t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN ||
+            t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA ||
             t.type == TOKEN_GT || t.type == TOKEN_LT || t.type == TOKEN_EQ || t.type == TOKEN_NEQ) {
             fprintf(out, "%s ", next_token().value);
         } else {
@@ -172,7 +177,40 @@ void compile_block(FILE* out);
 
 void compile_statement(FILE* out) {
     Token tok = next_token();
-    if (tok.type == TOKEN_PRINT) {
+    if (tok.type == TOKEN_FN) {
+        int saved_count = declared_count;
+        declared_count = 0;
+        
+        Token name = next_token();
+        fprintf(out_funcs, "double %s(", name.value);
+        next_token();
+        int first = 1;
+        while (peek_token().type != TOKEN_RPAREN) {
+            if (!first) { fprintf(out_funcs, ", "); next_token(); }
+            Token param = next_token();
+            fprintf(out_funcs, "double %s", param.value);
+            declare_var(param.value);
+            first = 0;
+        }
+        next_token();
+        fprintf(out_funcs, ") {\n");
+        next_token();
+        
+        while (currentTokenIndex < tokenCount) {
+            Token t = peek_token();
+            if (t.type == TOKEN_RBRACE) { next_token(); break; }
+            if (t.type == TOKEN_EOF) break;
+            compile_statement(out_funcs);
+        }
+        fprintf(out_funcs, "return 0;\n}\n");
+        
+        declared_count = saved_count;
+        return;
+    } else if (tok.type == TOKEN_RETURN) {
+        fprintf(out, "return ");
+        compile_expression(out);
+        fprintf(out, ";\n");
+    } else if (tok.type == TOKEN_PRINT) {
         Token next = peek_token();
         if (next.type == TOKEN_STRING) {
             next_token();
@@ -185,7 +223,6 @@ void compile_statement(FILE* out) {
     } else if (tok.type == TOKEN_LET) {
         Token name_tok = next_token();
         next_token();
-        
         Token val_peek = peek_token();
         
         if (!is_declared(name_tok.value)) {
@@ -321,7 +358,7 @@ void compile_block(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
-        printf("Gage Programming Language v2.1.0\n"); return 0;
+        printf("Gage Programming Language v3.0.0\n"); return 0;
     }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     char* ext = strrchr(argv[1], '.');
@@ -335,12 +372,27 @@ int main(int argc, char** argv) {
     
     tokenize();
     
-    FILE* out_c = fopen(".gage_temp.c", "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\nint main() {\n");
+    out_funcs = fopen(".gage_funcs.c", "w");
+    out_main = fopen(".gage_main.c", "w");
     
     while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) {
-        compile_statement(out_c);
+        compile_statement(out_main);
     }
+    
+    fclose(out_funcs);
+    fclose(out_main);
+    
+    FILE* out_c = fopen(".gage_temp.c", "w");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n");
+    
+    FILE* f_in = fopen(".gage_funcs.c", "r");
+    int c; while ((c = fgetc(f_in)) != EOF) fputc(c, out_c);
+    fclose(f_in);
+    
+    fprintf(out_c, "int main() {\n");
+    FILE* m_in = fopen(".gage_main.c", "r");
+    while ((c = fgetc(m_in)) != EOF) fputc(c, out_c);
+    fclose(m_in);
     
     fprintf(out_c, "return 0;\n}\n");
     fclose(out_c);
@@ -354,6 +406,8 @@ int main(int argc, char** argv) {
     } else {
         printf("[Gage] Error: Compilation failed.\n");
     }
+    
+    system("rm -f .gage_funcs.c .gage_main.c");
     
     return 0;
 }
