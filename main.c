@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h> // Added for sleep()
+#include <unistd.h>
 
 void compile_statement(FILE* out);
 void compile_expression(FILE* out);
@@ -18,7 +18,7 @@ typedef enum {
     TOKEN_LBRACE, TOKEN_RBRACE, TOKEN_GT, TOKEN_LT, TOKEN_EQ, TOKEN_NEQ, TOKEN_INPUT,
     TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_COMMA, TOKEN_ELIF, TOKEN_FOR, TOKEN_BREAK, 
     TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT, TOKEN_FN, TOKEN_RETURN,
-    TOKEN_EXEC, TOKEN_SLEEP, TOKEN_CLEAR // Added Set 2 Tokens
+    TOKEN_EXEC, TOKEN_SLEEP, TOKEN_CLEAR
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
@@ -47,9 +47,9 @@ void tokenize() {
             else if (strcmp(t.value, "let") == 0) t.type = TOKEN_LET; 
             else if (strcmp(t.value, "const") == 0) t.type = TOKEN_CONST; 
             else if (strcmp(t.value, "while") == 0) t.type = TOKEN_WHILE; 
-            else if (strcmp(t.value, "exec") == 0) t.type = TOKEN_EXEC; // Set 2
-            else if (strcmp(t.value, "sleep") == 0) t.type = TOKEN_SLEEP; // Set 2
-            else if (strcmp(t.value, "clear") == 0) t.type = TOKEN_CLEAR; // Set 2
+            else if (strcmp(t.value, "exec") == 0) t.type = TOKEN_EXEC;
+            else if (strcmp(t.value, "sleep") == 0) t.type = TOKEN_SLEEP;
+            else if (strcmp(t.value, "clear") == 0) t.type = TOKEN_CLEAR;
             else t.type = TOKEN_IDENT; 
             tokens[tokenCount++] = t; continue; 
         }
@@ -74,12 +74,21 @@ Token next_token() { Token t = peek_token(); if (currentTokenIndex < tokenCount)
 
 void compile_expression(FILE* out) {
     int expect_operator = 0;
+    int paren_depth = 0; // NEW: Track how deep we are in parentheses
+    
     while (currentTokenIndex < tokenCount) {
         Token t = peek_token();
         int is_operand = (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT);
         if (expect_operator && is_operand) break; 
         
         if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || t.type == TOKEN_LT || t.type == TOKEN_GT || t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA) {
+            
+            if (t.type == TOKEN_LPAREN) paren_depth++;
+            if (t.type == TOKEN_RPAREN) {
+                if (paren_depth == 0) break; // STOP: This ')' belongs to the function, not the expression
+                paren_depth--;
+            }
+
             fprintf(out, "%s ", next_token().value);
             if (t.type == TOKEN_LPAREN || t.type == TOKEN_COMMA) { expect_operator = 0; } 
             else if (t.type == TOKEN_RPAREN) { expect_operator = 1; } 
@@ -97,10 +106,16 @@ void compile_expression(FILE* out) {
 }
 
 void compile_condition(FILE* out) {
-    next_token(); 
+    if (peek_token().type == TOKEN_LPAREN) next_token(); // Eat first '('
+    int paren_depth = 0;
     while (currentTokenIndex < tokenCount) {
         Token t = peek_token();
-        if (t.type == TOKEN_RPAREN) { next_token(); break; }
+        if (t.type == TOKEN_LPAREN) paren_depth++;
+        if (t.type == TOKEN_RPAREN) { 
+            if (paren_depth == 0) { next_token(); break; } // Eat final ')' and stop safely
+            paren_depth--;
+        }
+        if (t.type == TOKEN_EOF) break;
         fprintf(out, "%s ", next_token().value);
     }
 }
@@ -118,22 +133,46 @@ void compile_block(FILE* out) {
 void compile_statement(FILE* out) {
     Token tok = next_token();
     if (tok.type == TOKEN_PRINT) {
+        int has_paren = 0;
+        if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        
         Token next = peek_token();
-        if (next.type == TOKEN_STRING) { next_token(); fprintf(out, "printf(\"%%s\\n\", \"%s\");\n", next.value); } 
-        else { fprintf(out, "printf(\"%%g\\n\", (double)("); compile_expression(out); fprintf(out, "));\n"); }
+        if (next.type == TOKEN_STRING) { 
+            next_token(); fprintf(out, "printf(\"%%s\\n\", \"%s\");\n", next.value); 
+        } else { 
+            fprintf(out, "printf(\"%%g\\n\", (double)("); 
+            compile_expression(out); 
+            fprintf(out, "));\n"); 
+        }
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+
     } else if (tok.type == TOKEN_CLEAR) {
         fprintf(out, "system(\"clear\");\n");
-        if (peek_token().type == TOKEN_LPAREN) { next_token(); next_token(); }
+        if (peek_token().type == TOKEN_LPAREN) { 
+            next_token(); 
+            if (peek_token().type == TOKEN_RPAREN) next_token(); 
+        }
     } else if (tok.type == TOKEN_SLEEP) {
-        if (peek_token().type == TOKEN_LPAREN) next_token();
-        fprintf(out, "sleep((unsigned int)("); compile_expression(out); fprintf(out, "));\n");
+        int has_paren = 0;
+        if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        
+        fprintf(out, "sleep((unsigned int)("); 
+        compile_expression(out); 
+        fprintf(out, "));\n");
+        
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+
     } else if (tok.type == TOKEN_EXEC) {
-        if (peek_token().type == TOKEN_LPAREN) next_token();
+        int has_paren = 0;
+        if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        
         Token next = peek_token();
         if (next.type == TOKEN_STRING) {
             next_token(); fprintf(out, "system(\"%s\");\n", next.value);
         }
-        if (peek_token().type == TOKEN_RPAREN) next_token();
+        
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+
     } else if (tok.type == TOKEN_LET || tok.type == TOKEN_CONST) {
         Token name = next_token(); next_token();
         fprintf(out, "%s %s = ", (tok.type == TOKEN_CONST ? "const double" : "int"), name.value);
@@ -151,21 +190,14 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
-        printf("Gage Programming Language v3.3.0\n"); return 0; 
+        printf("Gage Programming Language v3.3.1\n"); return 0; 
     }
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
         printf("\n==================================\n");
         printf("       GAGE COMPILER HELP\n");
         printf("==================================\n");
         printf("Usage: gage <filename.gg>\n\n");
-        printf("CLI Commands:\n");
-        printf("  gage --version   : Show current version\n");
-        printf("  gage help        : Show this manual\n\n");
-        printf("Language Features (v3.3.0):\n");
-        printf("  Variables        : let, const\n");
-        printf("  Operators        : +, -, *, /, %%, **, %%=\n");
-        printf("  Control Flow     : while loops, if/else\n");
-        printf("  Set 1 Math       : sqrt(), abs(), max(a,b), min(a,b)\n");
+        printf("Language Features (v3.3.1):\n");
         printf("  Set 2 System     : exec(\"cmd\"), sleep(sec), clear()\n");
         printf("==================================\n\n");
         return 0; 
