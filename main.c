@@ -1,9 +1,11 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 typedef enum {
+    TOKEN_CONST, TOKEN_POW, TOKEN_MOD_ASSIGN,
     TOKEN_EOF, TOKEN_PRINT, TOKEN_LET, TOKEN_IDENT, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING,
     TOKEN_TRUE, TOKEN_FALSE,
     TOKEN_PLUS, TOKEN_MINUS, TOKEN_STAR, TOKEN_SLASH, TOKEN_MOD,
