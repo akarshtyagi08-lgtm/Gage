@@ -329,7 +329,8 @@ int main(int argc, char** argv) {
         fclose(m_mods);
     }
 
-    fprintf(out_c, "\nint main(){\n");
+    // Fix: Automatically inject a time-based random seed right at the start of main
+    fprintf(out_c, "\nint main(){\n    srand(time(NULL));\n");
     
     FILE* m_in = fopen(p_m, "r");
     if (m_in) {
