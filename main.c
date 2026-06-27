@@ -35,6 +35,12 @@ int is_declared(const char* name) {
 }
 void declare_var(const char* name) { strcpy(declared_vars[declared_count++], name); }
 
+// --- LINTER ERROR HANDLER ---
+void throw_lint_error(const char* msg, const char* var_name) {
+    printf("\033[1;31m[Gage Linter Error]\033[0m %s '%s'\n", msg, var_name);
+    exit(1);
+}
+
 void tokenize() {
     while (src_pos < src_len) {
         char c = src[src_pos];
@@ -103,6 +109,14 @@ void compile_expression(FILE* out) {
                 TokenType nt = tokens[currentTokenIndex + 1].type;
                 if (nt == TOKEN_ASSIGN || nt == TOKEN_MOD_ASSIGN || nt == TOKEN_PLUS_ASSIGN || nt == TOKEN_MINUS_ASSIGN) break;
             }
+            
+            // --- LINTER CHECK ---
+            if (strcmp(t.value, "abs") != 0 && strcmp(t.value, "sqrt") != 0 && strcmp(t.value, "max") != 0 && strcmp(t.value, "min") != 0) {
+                if (!is_declared(t.value)) {
+                    throw_lint_error("Undeclared variable used in expression:", t.value);
+                }
+            }
+            
             if (strcmp(t.value, "abs") == 0) fprintf(out, "fabs ");
             else fprintf(out, "%s ", t.value);
             next_token(); expect_operator = 1;
@@ -153,13 +167,9 @@ void compile_statement(FILE* out) {
     } else if (tok.type == TOKEN_DELAY || tok.type == TOKEN_COLOR || tok.type == TOKEN_CURSOR || tok.type == TOKEN_HIDE_CURSOR || tok.type == TOKEN_SHOW_CURSOR) {
         int has_paren = 0;
         if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
-        
         fprintf(out, "%s(", tok.value);
-        if (tok.type != TOKEN_HIDE_CURSOR && tok.type != TOKEN_SHOW_CURSOR) {
-            compile_expression(out);
-        }
+        if (tok.type != TOKEN_HIDE_CURSOR && tok.type != TOKEN_SHOW_CURSOR) compile_expression(out);
         fprintf(out, ");\n");
-        
         if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
 
     } else if (tok.type == TOKEN_CLEAR) {
@@ -183,7 +193,10 @@ void compile_statement(FILE* out) {
     } else if (tok.type == TOKEN_IDENT) {
         Token op = next_token();
         if (op.type == TOKEN_ASSIGN || op.type == TOKEN_PLUS_ASSIGN || op.type == TOKEN_MINUS_ASSIGN) {
-            if (!is_declared(tok.value)) { fprintf(out, "int "); declare_var(tok.value); }
+            // LINTER: Check if trying to update an undeclared variable
+            if (!is_declared(tok.value)) { 
+                throw_lint_error("Cannot re-assign undeclared variable:", tok.value);
+            }
             fprintf(out, "%s %s ", tok.value, op.value); compile_expression(out); fprintf(out, ";\n");
         }
     } else if (tok.type == TOKEN_WHILE) {
@@ -193,41 +206,9 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
-        printf("Gage Programming Language v3.3.4\n"); return 0; 
+        printf("Gage Programming Language v3.3.6\n"); return 0; 
     }
-    if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
-        printf("\n=======================================================\n");
-        printf("               GAGE COMPILER FULL MANUAL               \n");
-        printf("=======================================================\n");
-        printf("Usage: gage <filename.gg>\n\n");
-        printf("1. CORE SYNTAX\n");
-        printf("  let x = 10        : Declares a mutable variable\n");
-        printf("  const PI = 3.14   : Declares an immutable constant\n");
-        printf("  print \"Text\"      : Prints text with a newline\n");
-        printf("  print(x)          : Prints the value of a variable\n\n");
-        printf("2. MATH & LOGIC (Set 1)\n");
-        printf("  +, -, *, /        : Standard arithmetic\n");
-        printf("  %%, **             : Modulo and Power (e.g., 2 ** 3)\n");
-        printf("  +=, -=, %%=        : Assignment operators\n");
-        printf("  sqrt(25)          : Returns square root (5)\n");
-        printf("  abs(-10)          : Returns absolute value (10)\n");
-        printf("  max(5, 10)        : Returns highest number (10)\n");
-        printf("  min(5, 10)        : Returns lowest number (5)\n\n");
-        printf("3. SYSTEM AUTOMATION (Set 2)\n");
-        printf("  exec(\"ls\")        : Runs a shell command directly\n");
-        printf("  sleep(2)          : Pauses script for 2 seconds\n");
-        printf("  clear()           : Wipes the terminal screen\n\n");
-        printf("4. GAME DEV & GRAPHICS (Set 3)\n");
-        printf("  render \"=>\"       : Prints WITHOUT a new line (for games)\n");
-        printf("  cursor(x, y)      : Moves text cursor to X, Y coordinates\n");
-        printf("  color(31)         : Sets text color (31=Red, 32=Green, 0=Reset)\n");
-        printf("  delay(40)         : Pauses for milliseconds (great for FPS loops)\n");
-        printf("  hide_cursor()     : Hides the blinking terminal cursor\n");
-        printf("  show_cursor()     : Restores the terminal cursor\n");
-        printf("=======================================================\n\n");
-        return 0; 
-    }
-    if (argc < 2) { printf("Usage: gage <filename.gg>\nType 'gage help' for the detailed manual.\n"); return 1; }
+    if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
     
     FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
     fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET);
