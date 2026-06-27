@@ -122,7 +122,11 @@ void tokenize() {
         Token t;
         t.value[0] = c;
         t.value[1] = '\0';
-        if (c == '&' && src_pos + 1 < src_len && src[src_pos+1] == '&') {
+        if (c == '!' && src_pos + 1 < src_len && src[src_pos+1] == '=') {
+            t.type = TOKEN_NEQ;
+            strcpy(t.value, "!=");
+            src_pos++;
+        } else if (c == '&' && src_pos + 1 < src_len && src[src_pos+1] == '&') {
             t.type = TOKEN_AND;
             strcpy(t.value, "&&");
             src_pos++;
@@ -167,9 +171,20 @@ Token next_token() {
 void compile_expression(FILE* out) {
     while (currentTokenIndex < tokenCount) {
         Token t = peek_token();
+        
+        // Stop expression parsing if we detect a new assignment statement line (e.g., x += 1)
+        if (t.type == TOKEN_IDENT && currentTokenIndex + 1 < tokenCount) {
+            TokenType next_t = tokens[currentTokenIndex + 1].type;
+            if (next_t == TOKEN_ASSIGN || next_t == TOKEN_PLUS_ASSIGN || 
+                next_t == TOKEN_MINUS_ASSIGN || next_t == TOKEN_STAR_ASSIGN || next_t == TOKEN_SLASH_ASSIGN) {
+                break;
+            }
+        }
+
         if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT ||
             t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_AND ||
-            t.type == TOKEN_OR_OP) {
+            t.type == TOKEN_OR_OP || t.type == TOKEN_EQ || t.type == TOKEN_NEQ ||
+            t.type == TOKEN_LT || t.type == TOKEN_GT || t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN) {
             fprintf(out, "%s ", next_token().value);
         } else break;
     }
@@ -228,6 +243,12 @@ void compile_statement(FILE* out) {
         fprintf(out, "// Module: %s\n", mod.value);
         if (strcmp(mod.value, "random") == 0)
             fprintf(out, "srand(time(NULL));\n");
+    } else if (tok.type == TOKEN_IDENT) {
+        // Handle variable modifications like x += 1 or x = 5 directly
+        Token op = next_token(); 
+        fprintf(out, "%s %s ", tok.value, op.value);
+        compile_expression(out);
+        fprintf(out, ";\n");
     }
 }
 
