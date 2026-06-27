@@ -24,6 +24,7 @@ typedef struct { TokenType type; char value[256]; } Token;
 
 // --- GLOBAL VARIABLES ---
 FILE *out_main;
+FILE *out_modules;
 char *src;
 int src_pos = 0, src_len = 0;
 Token tokens[10000];
@@ -189,8 +190,8 @@ void compile_expression(FILE* out) {
 
         if (t.type == TOKEN_LPAREN) paren_depth++;
         if (t.type == TOKEN_RPAREN) {
-            if (paren_depth == 0) break; // Leave the closing parenthesis for 'while' block handling
-            paren_depth--; // Otherwise, it's a function parenthesis, process it!
+            if (paren_depth == 0) break;
+            paren_depth--;
         }
 
         if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT ||
@@ -267,9 +268,10 @@ void compile_statement(FILE* out) {
         FILE* mod_file = fopen(mod_path, "r");
         if (mod_file) {
             int ch;
-            while ((ch = fgetc(mod_file)) != EOF) fputc(ch, out);
+            // Global Fix: Redirect imported C module functions to out_modules stream (Global Scope)
+            while ((ch = fgetc(mod_file)) != EOF) fputc(ch, out_modules);
             fclose(mod_file);
-            fprintf(out, "\n");
+            fprintf(out_modules, "\n");
         } else {
             printf("[Gage Compiler Error] Module folder or file not found: %s\n", mod_path);
             exit(1);
@@ -308,22 +310,40 @@ int main(int argc, char** argv) {
 
     tokenize();
 
-    char p_m[] = ".gm.c", p_t[] = ".gt.c", p_e[] = ".ge";
+    char p_m[] = ".gm.c", p_t[] = ".gt.c", p_modules[] = ".gmod.c";
     out_main = fopen(p_m, "w");
+    out_modules = fopen(p_modules, "w");
+
     while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF)
         compile_statement(out_main);
+        
     fclose(out_main);
+    fclose(out_modules);
 
+    // Assembly Stage: Construct intermediate clean execution pipeline code
     FILE* out_c = fopen(p_t, "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\n#include <unistd.h>\nint main(){");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\n#include <unistd.h>\n#include <math.h>\n\n");
+    
+    // 1. Inject module implementations globally outside/above main
+    FILE* m_mods = fopen(p_modules, "r");
+    if (m_mods) {
+        int c;
+        while ((c = fgetc(m_mods)) != EOF) fputc(c, out_c);
+        fclose(m_mods);
+    }
+
+    // 2. Open standard statement block container scope
+    fprintf(out_c, "\nint main(){\n");
+    
+    // 3. Inject parsed main runtime block instructions
     FILE* m_in = fopen(p_m, "r");
     int c;
     while ((c = fgetc(m_in)) != EOF) fputc(c, out_c);
     fclose(m_in);
+    
     fprintf(out_c, "return 0;}");
     fclose(out_c);
 
-    // Run using Termux's safe execution path
     char cmd[1024];
     sprintf(cmd, "clang %s -o $PREFIX/bin/.gage_run && chmod +x $PREFIX/bin/.gage_run && .gage_run", p_t);
     system(cmd);
