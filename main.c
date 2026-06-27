@@ -19,7 +19,8 @@ typedef enum {
     TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_COMMA, TOKEN_ELIF, TOKEN_FOR, TOKEN_BREAK, 
     TOKEN_CONTINUE, TOKEN_SWITCH, TOKEN_CASE, TOKEN_DEFAULT, TOKEN_FN, TOKEN_RETURN,
     TOKEN_EXEC, TOKEN_SLEEP, TOKEN_CLEAR, 
-    TOKEN_RENDER, TOKEN_CURSOR, TOKEN_COLOR, TOKEN_DELAY, TOKEN_HIDE_CURSOR, TOKEN_SHOW_CURSOR
+    TOKEN_RENDER, TOKEN_CURSOR, TOKEN_COLOR, TOKEN_DELAY, TOKEN_HIDE_CURSOR, TOKEN_SHOW_CURSOR,
+    TOKEN_IMPORT // SET 4: Import Keyword
 } TokenType;
 
 typedef struct { TokenType type; char value[256]; } Token;
@@ -35,17 +36,15 @@ int is_declared(const char* name) {
 }
 void declare_var(const char* name) { strcpy(declared_vars[declared_count++], name); }
 
+void throw_lint_error(const char* msg, const char* var_name) {
+    printf("\033[1;31m[Gage Linter Error]\033[0m %s '%s'\n", msg, var_name); exit(1);
+}
+
 void tokenize() {
     while (src_pos < src_len) {
         char c = src[src_pos];
         if (isspace(c)) { src_pos++; continue; }
-        
-        // Comment Handling: Skip everything after ||[span_2](start_span)[span_2](end_span)
-        if (c == '|' && src_pos + 1 < src_len && src[src_pos+1] == '|') {
-            while (src_pos < src_len && src[src_pos] != '\n') src_pos++;
-            continue;
-        }
-
+        if (c == '|' && src_pos + 1 < src_len && src[src_pos+1] == '|') { while (src_pos < src_len && src[src_pos] != '\n') src_pos++; continue; }
         if (c == '"') { src_pos++; int t_idx = 0; Token t; t.type = TOKEN_STRING; while (src_pos < src_len && src[src_pos] != '"') t.value[t_idx++] = src[src_pos++]; t.value[t_idx] = '\0'; tokens[tokenCount++] = t; src_pos++; continue; }
         if (isdigit(c)) { int start = src_pos; int has_dot = 0; while (src_pos < src_len && (isdigit(src[src_pos]) || src[src_pos] == '.')) { if (src[src_pos] == '.') has_dot = 1; src_pos++; } Token t; t.type = has_dot ? TOKEN_FLOAT : TOKEN_INT; int len = src_pos - start; strncpy(t.value, &src[start], len); t.value[len] = '\0'; tokens[tokenCount++] = t; continue; }
         if (isalpha(c) || c == '_') { 
@@ -64,12 +63,11 @@ void tokenize() {
             else if (strcmp(t.value, "delay") == 0) t.type = TOKEN_DELAY;
             else if (strcmp(t.value, "hide_cursor") == 0) t.type = TOKEN_HIDE_CURSOR;
             else if (strcmp(t.value, "show_cursor") == 0) t.type = TOKEN_SHOW_CURSOR;
+            else if (strcmp(t.value, "import") == 0) t.type = TOKEN_IMPORT;
             else t.type = TOKEN_IDENT; 
             tokens[tokenCount++] = t; continue; 
         }
         Token t; t.value[0] = c; t.value[1] = '\0';
-        
-        // Logical Operators[span_3](start_span)[span_3](end_span)
         if (c == '&' && src_pos + 1 < src_len && src[src_pos+1] == '&') { t.type = TOKEN_AND; strcpy(t.value, "&&"); src_pos++; }
         else if (c == '|' && src_pos + 1 < src_len && src[src_pos+1] == '|') { t.type = TOKEN_OR; strcpy(t.value, "||"); src_pos++; }
         else if (c == '+') { if (src_pos+1 < src_len && src[src_pos+1] == '=') { t.type = TOKEN_PLUS_ASSIGN; strcpy(t.value, "+="); src_pos++; } else t.type = TOKEN_PLUS; }
@@ -87,9 +85,161 @@ void tokenize() {
     Token eof; eof.type = TOKEN_EOF; strcpy(eof.value, "EOF"); tokens[tokenCount++] = eof;
 }
 
-// ... (Rest of compile_statement and main updated to v3.3.7)
+Token peek_token() { return (currentTokenIndex >= tokenCount) ? tokens[tokenCount - 1] : tokens[currentTokenIndex]; }
+Token next_token() { Token t = peek_token(); if (currentTokenIndex < tokenCount) currentTokenIndex++; return t; }
+
+int is_std_func(const char* name) {
+    const char* std_funcs[] = {"abs", "sqrt", "max", "min", "sin", "cos", "tan", "log", "ceil", "floor", "round", "randint", "rand_float", "timestamp", "clock_ticks", "str_len"};
+    for(int i = 0; i < 16; i++) if (strcmp(name, std_funcs[i]) == 0) return 1;
+    return 0;
+}
+
+void compile_expression(FILE* out) {
+    int expect_operator = 0; int paren_depth = 0;
+    while (currentTokenIndex < tokenCount) {
+        Token t = peek_token();
+        int is_operand = (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_IDENT);
+        if (expect_operator && is_operand) break; 
+        
+        if (t.type == TOKEN_INT || t.type == TOKEN_FLOAT || t.type == TOKEN_PLUS || t.type == TOKEN_MINUS || t.type == TOKEN_STAR || t.type == TOKEN_SLASH || t.type == TOKEN_MOD || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || t.type == TOKEN_LT || t.type == TOKEN_GT || t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN || t.type == TOKEN_COMMA || t.type == TOKEN_AND || t.type == TOKEN_OR) {
+            if (t.type == TOKEN_LPAREN) paren_depth++;
+            if (t.type == TOKEN_RPAREN) { if (paren_depth == 0) break; paren_depth--; }
+            fprintf(out, "%s ", next_token().value);
+            if (t.type == TOKEN_LPAREN || t.type == TOKEN_COMMA) { expect_operator = 0; } else if (t.type == TOKEN_RPAREN) { expect_operator = 1; } else { expect_operator = is_operand; }
+        } else if (t.type == TOKEN_IDENT) {
+            if (currentTokenIndex + 1 < tokenCount) { TokenType nt = tokens[currentTokenIndex + 1].type; if (nt == TOKEN_ASSIGN || nt == TOKEN_MOD_ASSIGN || nt == TOKEN_PLUS_ASSIGN || nt == TOKEN_MINUS_ASSIGN) break; }
+            if (!is_std_func(t.value) && !is_declared(t.value)) { throw_lint_error("Undeclared variable/function used:", t.value); }
+            if (strcmp(t.value, "abs") == 0) fprintf(out, "fabs "); else fprintf(out, "%s ", t.value);
+            next_token(); expect_operator = 1;
+        } else { break; }
+    }
+}
+
+void compile_condition(FILE* out) {
+    if (peek_token().type == TOKEN_LPAREN) next_token();
+    int paren_depth = 0;
+    while (currentTokenIndex < tokenCount) {
+        Token t = peek_token();
+        if (t.type == TOKEN_LPAREN) paren_depth++;
+        if (t.type == TOKEN_RPAREN) { if (paren_depth == 0) { next_token(); break; } paren_depth--; }
+        if (t.type == TOKEN_EOF) break;
+        fprintf(out, "%s ", next_token().value);
+    }
+}
+
+void compile_block(FILE* out) {
+    next_token();
+    while (currentTokenIndex < tokenCount) { Token t = peek_token(); if (t.type == TOKEN_RBRACE) { next_token(); fprintf(out, "}\n"); break; } if (t.type == TOKEN_EOF) break; compile_statement(out); }
+}
+
+void compile_statement(FILE* out) {
+    Token tok = next_token();
+    
+    if (tok.type == TOKEN_IMPORT) {
+        Token mod = next_token();
+        fprintf(out, "// GAGE MODULE IMPORTED: %s\n", mod.value);
+        if (strcmp(mod.value, "random") == 0) fprintf(out, "srand(time(NULL));\n");
+    } else if (tok.type == TOKEN_PRINT || tok.type == TOKEN_RENDER) {
+        int has_paren = 0; if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        Token next = peek_token(); const char* end_char = (tok.type == TOKEN_PRINT) ? "\\n" : "";
+        if (next.type == TOKEN_STRING) { next_token(); fprintf(out, "printf(\"%%s%s\", \"%s\");\n", end_char, next.value); } else { fprintf(out, "printf(\"%%g%s\", (double)(" , end_char); compile_expression(out); fprintf(out, "));\n"); }
+        if (tok.type == TOKEN_RENDER) fprintf(out, "fflush(stdout);\n");
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+    } else if (tok.type == TOKEN_DELAY || tok.type == TOKEN_COLOR || tok.type == TOKEN_CURSOR || tok.type == TOKEN_HIDE_CURSOR || tok.type == TOKEN_SHOW_CURSOR) {
+        int has_paren = 0; if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        fprintf(out, "%s(", tok.value); if (tok.type != TOKEN_HIDE_CURSOR && tok.type != TOKEN_SHOW_CURSOR) compile_expression(out); fprintf(out, ");\n");
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+    } else if (tok.type == TOKEN_CLEAR) {
+        fprintf(out, "system(\"clear\");\n"); if (peek_token().type == TOKEN_LPAREN) { next_token(); if (peek_token().type == TOKEN_RPAREN) next_token(); }
+    } else if (tok.type == TOKEN_SLEEP) {
+        int has_paren = 0; if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        fprintf(out, "sleep((unsigned int)("); compile_expression(out); fprintf(out, "));\n");
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+    } else if (tok.type == TOKEN_EXEC) {
+        int has_paren = 0; if (peek_token().type == TOKEN_LPAREN) { next_token(); has_paren = 1; }
+        Token next = peek_token(); if (next.type == TOKEN_STRING) { next_token(); fprintf(out, "system(\"%s\");\n", next.value); }
+        if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
+    } else if (tok.type == TOKEN_LET || tok.type == TOKEN_CONST) {
+        Token name = next_token(); next_token();
+        fprintf(out, "%s %s = ", (tok.type == TOKEN_CONST ? "const double" : "int"), name.value);
+        compile_expression(out); fprintf(out, ";\n"); declare_var(name.value);
+    } else if (tok.type == TOKEN_IDENT) {
+        Token op = next_token();
+        if (op.type == TOKEN_ASSIGN || op.type == TOKEN_PLUS_ASSIGN || op.type == TOKEN_MINUS_ASSIGN) {
+            if (!is_declared(tok.value)) { throw_lint_error("Cannot re-assign undeclared variable:", tok.value); }
+            fprintf(out, "%s %s ", tok.value, op.value); compile_expression(out); fprintf(out, ";\n");
+        }
+    } else if (tok.type == TOKEN_WHILE) {
+        fprintf(out, "while ("); compile_condition(out); fprintf(out, ") {\n"); compile_block(out);
+    }
+}
 
 int main(int argc, char** argv) {
-    if (argc == 2 && (strcmp(argv[1], "--version") == 0)) { printf("Gage Programming Language v3.3.7\n"); return 0; }
-    // ... (rest of main)
+    if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { printf("Gage Programming Language v3.4.0\n"); return 0; }
+    if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
+        printf("\n=======================================================\n");
+        printf("               GAGE COMPILER FULL MANUAL               \n");
+        printf("=======================================================\n");
+        printf("1. CORE & LOGIC\n");
+        printf("  let, const, || (comment), &&, ||, print, render\n\n");
+        printf("2. MODULES & IMPORTS (Set 4 - v3.4.0)\n");
+        printf("  import math   : sin(), cos(), tan(), ceil(), floor(), round()\n");
+        printf("  import random : randint(min, max), rand_float(), seed_random()\n");
+        printf("  import time   : timestamp(), clock_ticks()\n");
+        printf("  import os     : exit(code), get_env(\"VAR\")\n");
+        printf("  import fs     : remove_file(\"name\"), rename_file(\"a\",\"b\")\n");
+        printf("  import string : str_len(\"txt\"), to_upper(c)\n");
+        printf("  import sys    : cpu_yield()\n");
+        printf("  import io     : flush_out(), bell()\n");
+        printf("  import term   : reset_term(), bold(), underline()\n");
+        printf("  import net    : ping(\"url\")\n");
+        printf("=======================================================\n\n");
+        return 0; 
+    }
+    if (argc < 2) { printf("Usage: gage <filename.gg>\nType 'gage help' for the manual.\n"); return 1; }
+    
+    FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
+    fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET);
+    src = malloc(src_len + 1); fread(src, 1, src_len, file); src[src_len] = '\0'; fclose(file); 
+    tokenize();
+    
+    char* tmp = getenv("TMPDIR") ? getenv("TMPDIR") : "/tmp";
+    char p_m[512], p_t[512], p_e[512];
+    sprintf(p_m, "%s/.gm.c", tmp); sprintf(p_t, "%s/.gt.c", tmp); sprintf(p_e, "%s/.ge", tmp);
+    out_main = fopen(p_m, "w");
+    while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) compile_statement(out_main);
+    fclose(out_main);
+    
+    FILE* out_c = fopen(p_t, "w");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n#include <time.h>\n#include <string.h>\n#include <ctype.h>\n");
+    // Core Engine Macros
+    fprintf(out_c, "#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\n");
+    fprintf(out_c, "#define delay(ms) usleep((unsigned int)(ms) * 1000)\n#define color(c) printf(\"\\033[%%dm\", (int)(c))\n");
+    fprintf(out_c, "#define cursor(x,y) printf(\"\\033[%%d;%%dH\", (int)(y), (int)(x))\n#define hide_cursor() printf(\"\\033[?25l\")\n#define show_cursor() printf(\"\\033[?25h\")\n");
+    // MODULE ENGINE MACROS (Set 4)
+    fprintf(out_c, "#define randint(min, max) (rand() %% ((max) - (min) + 1) + (min))\n");
+    fprintf(out_c, "#define rand_float() ((double)rand() / (double)RAND_MAX)\n");
+    fprintf(out_c, "#define seed_random() srand(time(NULL))\n");
+    fprintf(out_c, "#define timestamp() (long)time(NULL)\n");
+    fprintf(out_c, "#define clock_ticks() (long)clock()\n");
+    fprintf(out_c, "#define remove_file(name) remove(name)\n");
+    fprintf(out_c, "#define rename_file(old, new) rename(old, new)\n");
+    fprintf(out_c, "#define str_len(s) strlen(s)\n");
+    fprintf(out_c, "#define to_upper(c) toupper(c)\n");
+    fprintf(out_c, "#define cpu_yield() sched_yield()\n");
+    fprintf(out_c, "#define flush_out() fflush(stdout)\n");
+    fprintf(out_c, "#define bell() printf(\"\\a\")\n");
+    fprintf(out_c, "#define reset_term() printf(\"\\033[0m\")\n");
+    fprintf(out_c, "#define bold() printf(\"\\033[1m\")\n");
+    fprintf(out_c, "#define underline() printf(\"\\033[4m\")\n");
+    fprintf(out_c, "#define ping(url) system(\"ping -c 1 \" url)\n");
+
+    fprintf(out_c, "int main(){");
+    FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
+    fprintf(out_c, "return 0;}"); fclose(out_c); free(src);
+    
+    char cmd[1024]; sprintf(cmd, "clang -O0 -w %s -o %s -lm && %s", p_t, p_e, p_e);
+    system(cmd);
+    char clean[1024]; sprintf(clean, "rm -f %s %s %s", p_m, p_t, p_e);
+    system(clean); return 0;
 }

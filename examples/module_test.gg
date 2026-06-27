@@ -1,0 +1,16 @@
+import random
+import time
+import term
+
+bold()
+color(32)
+print "--- Gage Module Test ---"
+reset_term()
+
+let my_random = randint(1, 100)
+print "Random Number (1-100):"
+print(my_random)
+
+let time_now = timestamp()
+print "Current Unix Timestamp:"
+print(time_now)
