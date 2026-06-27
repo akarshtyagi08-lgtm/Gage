@@ -78,8 +78,17 @@ void tokenize() {
 void compile_expression(FILE* out) {
     while (currentTokenIndex < tokenCount) {
         Token t = tokens[currentTokenIndex];
-        // Stop if we hit a statement keyword
-        if (t.type == TOKEN_PRINT || t.type == TOKEN_LET || t.type == TOKEN_WHILE || t.type == TOKEN_RBRACE) break;
+        
+        // Stop expression greediness if next statement keywords appear
+        if (t.type == TOKEN_PRINT || t.type == TOKEN_LET || t.type == TOKEN_WHILE || 
+            t.type == TOKEN_RBRACE || t.type == TOKEN_LBRACE) break;
+            
+        // Lookahead to prevent stealing an identity statement token (like x += 1)
+        if (t.type == TOKEN_IDENT && currentTokenIndex + 1 < tokenCount) {
+            TokenType next_t = tokens[currentTokenIndex + 1].type;
+            if (next_t == TOKEN_ASSIGN || next_t == TOKEN_PLUS_ASSIGN) break;
+        }
+
         if (t.type == TOKEN_INT || t.type == TOKEN_IDENT || t.type == TOKEN_PLUS || 
             t.type == TOKEN_MINUS || t.type == TOKEN_EQ || t.type == TOKEN_NEQ || 
             t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN) {
@@ -102,18 +111,22 @@ void compile_statement(FILE* out) {
         compile_expression(out);
         fprintf(out, ";\n");
     } else if (tok.type == TOKEN_WHILE) {
+        currentTokenIndex++; // consume '('
         fprintf(out, "while(");
         compile_expression(out);
+        currentTokenIndex++; // consume ')'
         fprintf(out, "){\n");
         compile_block(out);
     } else if (tok.type == TOKEN_IDENT) {
-        fprintf(out, "%s ", tok.value);
+        Token op = tokens[currentTokenIndex++]; // += or =
+        fprintf(out, "%s %s ", tok.value, op.value);
         compile_expression(out);
         fprintf(out, ";\n");
     }
 }
 
 void compile_block(FILE* out) {
+    currentTokenIndex++; // consume '{'
     while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_RBRACE) {
         compile_statement(out);
     }
