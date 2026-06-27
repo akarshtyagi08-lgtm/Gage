@@ -147,7 +147,7 @@ void compile_statement(FILE* out) {
         } else { 
             fprintf(out, "printf(\"%%g%s\", (double)(" , end_char); compile_expression(out); fprintf(out, "));\n"); 
         }
-        if (tok.type == TOKEN_RENDER) fprintf(out, "fflush(stdout);\n"); // Force print instantly for game loops
+        if (tok.type == TOKEN_RENDER) fprintf(out, "fflush(stdout);\n");
         if (has_paren && peek_token().type == TOKEN_RPAREN) next_token();
 
     } else if (tok.type == TOKEN_DELAY || tok.type == TOKEN_COLOR || tok.type == TOKEN_CURSOR || tok.type == TOKEN_HIDE_CURSOR || tok.type == TOKEN_SHOW_CURSOR) {
@@ -193,25 +193,41 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) { 
-        printf("Gage Programming Language v3.3.3\n"); return 0; 
+        printf("Gage Programming Language v3.3.4\n"); return 0; 
     }
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) { 
-        printf("\n==================================\n");
-        printf("       GAGE COMPILER HELP\n");
-        printf("==================================\n");
+        printf("\n=======================================================\n");
+        printf("               GAGE COMPILER FULL MANUAL               \n");
+        printf("=======================================================\n");
         printf("Usage: gage <filename.gg>\n\n");
-        printf("CLI Commands:\n");
-        printf("  gage --version   : Show current version\n");
-        printf("  gage help        : Show this manual\n\n");
-        printf("Language Features (v3.3.3):\n");
-        printf("  Set 1 Math       : sqrt(), abs(), max(), min()\n");
-        printf("  Set 2 System     : exec(), sleep(), clear()\n");
-        printf("  Set 3 Game Dev   : render, delay(ms), color(c)\n");
-        printf("                     cursor(x,y), hide_cursor()\n");
-        printf("==================================\n\n");
+        printf("1. CORE SYNTAX\n");
+        printf("  let x = 10        : Declares a mutable variable\n");
+        printf("  const PI = 3.14   : Declares an immutable constant\n");
+        printf("  print \"Text\"      : Prints text with a newline\n");
+        printf("  print(x)          : Prints the value of a variable\n\n");
+        printf("2. MATH & LOGIC (Set 1)\n");
+        printf("  +, -, *, /        : Standard arithmetic\n");
+        printf("  %%, **             : Modulo and Power (e.g., 2 ** 3)\n");
+        printf("  +=, -=, %%=        : Assignment operators\n");
+        printf("  sqrt(25)          : Returns square root (5)\n");
+        printf("  abs(-10)          : Returns absolute value (10)\n");
+        printf("  max(5, 10)        : Returns highest number (10)\n");
+        printf("  min(5, 10)        : Returns lowest number (5)\n\n");
+        printf("3. SYSTEM AUTOMATION (Set 2)\n");
+        printf("  exec(\"ls\")        : Runs a shell command directly\n");
+        printf("  sleep(2)          : Pauses script for 2 seconds\n");
+        printf("  clear()           : Wipes the terminal screen\n\n");
+        printf("4. GAME DEV & GRAPHICS (Set 3)\n");
+        printf("  render \"=>\"       : Prints WITHOUT a new line (for games)\n");
+        printf("  cursor(x, y)      : Moves text cursor to X, Y coordinates\n");
+        printf("  color(31)         : Sets text color (31=Red, 32=Green, 0=Reset)\n");
+        printf("  delay(40)         : Pauses for milliseconds (great for FPS loops)\n");
+        printf("  hide_cursor()     : Hides the blinking terminal cursor\n");
+        printf("  show_cursor()     : Restores the terminal cursor\n");
+        printf("=======================================================\n\n");
         return 0; 
     }
-    if (argc < 2) { printf("Usage: gage <filename.gg>\nType 'gage help' for more info.\n"); return 1; }
+    if (argc < 2) { printf("Usage: gage <filename.gg>\nType 'gage help' for the detailed manual.\n"); return 1; }
     
     FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
     fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET);
@@ -228,7 +244,6 @@ int main(int argc, char** argv) {
     FILE* out_c = fopen(p_t, "w");
     fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n");
     fprintf(out_c, "#define max(a,b) ((a) > (b) ? (a) : (b))\n#define min(a,b) ((a) < (b) ? (a) : (b))\n");
-    // Injecting Set 3 Macros directly into the native C backend!
     fprintf(out_c, "#define delay(ms) usleep((unsigned int)(ms) * 1000)\n");
     fprintf(out_c, "#define color(c) printf(\"\\033[%%dm\", (int)(c))\n");
     fprintf(out_c, "#define cursor(x,y) printf(\"\\033[%%d;%%dH\", (int)(y), (int)(x))\n");
