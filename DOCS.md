@@ -1,101 +1,188 @@
-# The Official Gage Language Guide
+Welcome to the official, comprehensive documentation for the Gage Programming Language v2.0.1. Gage is an ahead-of-time (AOT) compiled, high-performance language engineered for high execution speeds and clean syntax layout. 
 
-Welcome to Gage! Gage is a fully compiled programming language. This guide covers all the syntax, rules, and commands you need to write powerful scripts.
-
----
-
-## 1. Terminal Commands
-How to use Gage from your command line:
-
-* **Run a script:** `gage filename.gg`
-* **Check version:** `gage --version` or `gage -v`
+By translating source code structures into highly optimized backend C code and running them through the Clang optimization pipeline (`-O3`), Gage executes programs directly as native machine binaries.
 
 ---
 
-## 2. Printing to the Console
-Use the `print` keyword to output text or numbers. 
-* **Strings** must be wrapped in double quotes `" "`.
-* **Variables/Numbers** are printed directly without quotes.
-* **Escape sequences:** Use `\n` for a new line and `\\` for a backslash.
+## 1. Architectural Principles & Summary
 
-    ```text
-    print "Hello\nWorld"
-    ```
+Gage is designed around three primary pillars:
+* **Blazing Fast Performance:** No virtual machines, no interpreters. Loops and math equations run at raw hardware speeds.
+* **Syntax Simplicity:** Clean layout structure that maximizes development speed without formatting clutter.
+* **Strict Structural Rules:** Predictable behavior enforced directly by the AOT compiler engine.
 
----
-
-## 3. Comments
-Need to hide text? Use `||` at the start and end of your comments.
-
-    ```text
-    || This is a comment that the computer ignores ||
-    print 100
-    ```
+### Strict Syntax Constraints Checklist
+1. **File Format:** The compiler strictly requires source code files to utilize the `.gg` file extension.
+2. **No Semicolons:** Do not append trailing semicolons `;` to your lines. Statement separation relies cleanly on standard line breaks.
+3. **Case Sensitivity:** Identifiers are entirely case-sensitive. Variables named `counter`, `Counter`, and `COUNTER` point to completely distinct memory definitions.
 
 ---
 
-## 4. Variables & Memory
-Store data in RAM using the `let` keyword. 
+## 2. Command Line Interface (CLI)
 
-    ```text
-    let my_number = 50
-    ```
+Interact with the Gage compiler toolchain using the global `gage` terminal execution utility.
 
----
+### Running Source Scripts
+To compile a source code file through the backend optimization script and trigger immediate native execution, supply the target filename:
+```text
+gage main.gg
 
-## 5. Arrays (Initialization)
-You can initialize arrays with square brackets.
+```
+### Checking Compiler Metadata
+To verify system paths, build variations, and view engine build records without targeting a script file, call the version flag:
+```text
+gage -v
+gage --version
 
-    ```text
-    let my_list = [1, 2, 3]
-    ```
+```
+## 3. Inline and Block Comments
+To leave developmental notes, structural documentation, or completely isolate lines of code from parsing passes, wrap the target text segment inside double pipes.
+### Syntax Example
+```text
+|| This is a comment. The compiler engine will completely ignore this text ||
 
----
+let x = 10 || Comments can also be appended to the end of a live code line ||
 
-## 6. Mathematical Operations
-Gage supports standard math parsing.
-* **Addition:** `+`, **Subtraction:** `-`, **Multiplication:** `*`, **Division:** `/`
+```
+## 4. Native Data Types
+Gage tracks, instantiates, and manipulates four primary structural data types.
+| Data Type | Description | Literal Formatting Example |
+|---|---|---|
+| **Integer** | Whole positive or negative numerical values | 42, -7 |
+| **Float** | Decimal values tracking high precision measurements | 19.99, -0.542 |
+| **Boolean** | Truth evaluation status toggles | true, false |
+| **String** | Textual streams bounded inside literal quote markers | "System Initialized\n" |
+## 5. Variable Declarations & Reassignment
+Memory allocation is managed via the static initialization keyword let. Gage dynamically maps the proper operational width inside your machine registers based on the underlying data assignment.
+### Initializing Variables
+```text
+let high_score = 5000
+let account_balance = 1250.45
+let is_engine_active = true
+let welcome_banner = "Welcome to Gage Engine"
 
-    ```text
-    let result = 10 + 5
-    ```
+```
+### Modifying Variable States
+Once a variable is registered into memory, update its value by targeting its unique identifier directly without repeating the let keyword:
+```text
+let operational_limit = 100
+operational_limit = 250
 
----
+```
+## 6. Operators Deep Dive
+Gage comes pre-equipped with an extensive array of mathematical, assignment, structural comparison, and logical evaluation operators.
+### Arithmetic Operators
+Execute mathematical assignments directly across numerical registers.
+```text
+let addition = 10 + 5
+let subtraction = 20 - 4
+let multiplication = 3 * 3
+let division = 100 / 4
+let remainder = 14 % 3
 
-## 7. If-Else Conditions (Logic)
-Make your code smart using `if` and `else` blocks. 
+```
+### Update Assignment Operators (Shorthands)
+Modify existing numeric variables in place using high-speed updating expressions.
+```text
+let speed = 50
+speed += 10
+speed -= 5
+speed *= 2
+speed /= 3
 
-    ```text
-    let age = 18
-    if (age > 17) {
-        print "Access Granted!"
-    }
-    ```
+```
+### Evaluation & Comparison Operators
+Validate conditions and structures inside control flow sequences.
+```text
+let threshold = 75
 
----
+|| Equality validations ||
+let matches = (threshold == 75)
+let differs = (threshold != 100)
 
-## 8. While Loops (Automation)
-Repeat actions automatically until a condition becomes false.
+|| Value boundaries ||
+let higher = (threshold > 50)
+let lower = (threshold < 100)
 
-    ```text
-    while (count < 5) {
-        print count
-    }
-    ```
+```
+### Logical Logic Operators
+Combine multiple structural evaluation clauses into streamlined conditional logic blocks.
+```text
+let validation_a = true
+let validation_b = false
 
----
+|| Logic AND check ||
+if (validation_a && validation_b) {
+    print "Both assertions are true"
+}
 
-## 9. User Input
-Use the `input` keyword to get values from the user.
-    
-    ```text
-    let x = input
-    ```
+|| Logic OR check ||
+if (validation_a or validation_b) {
+    print "At least one assertion is true"
+}
 
----
+|| Logic NOT check ||
+if (!validation_b) {
+    print "validation_b is verified false"
+}
 
-### Syntax Rules to Remember
-1. **No semicolons:** Do not put `;` at the end of lines!
-2. **Case-sensitive:** `let X` and `let x` are different.
-3. **Mandatory extension:** All source files must end with the `.gg` extension.
-4. **Compiled language:** Gage is a fully compiled language, executing code directly as native machine binary.
+```
+## 7. Control Flow & Branching Logic
+Direct program execution dynamically using standard conditional fork branches and lightning-fast iteration sequences.
+### If-Else Conditional Branches
+```text
+let internal_temperature = 98.6
+
+if (internal_temperature > 100.0) {
+    print "Warning: Temperature limit exceeded!"
+} else {
+    print "System operating within safe baseline parameters."
+}
+
+```
+### High-Speed While Loops
+Loops pass optimization metrics directly to the hardware level, executing iteration loops with minimal operational overhead.
+```text
+let iteration_counter = 0
+
+while (iteration_counter < 100000) {
+    iteration_counter += 1
+}
+
+print "Successfully executed 100,000 native iterations!"
+
+```
+## 8. Native Data Arrays
+Initialize safe, packed sequential index arrays inside memory allocations using standard square bracket arrays.
+### Array Generation Syntax
+```text
+let lottery_numbers = [4, 8, 15, 16, 23, 42]
+let coordinate_grid = [10.5, 20.3, 45.1]
+
+```
+## 9. Console I/O (Input / Output)
+Communicate cleanly with terminal standard input/output channels using low-latency streaming keywords.
+### Writing to the Terminal Console (print)
+The print keyword processes textual literal lines, variables, and raw equations effortlessly, parsing escape strings like \n natively.
+```text
+|| Printing literal strings ||
+print "System Status Check:\n"
+
+|| Printing evaluations dynamically ||
+let metrics = 88.4
+print metrics
+
+|| Printing raw math sequences directly ||
+print (500 * 2) + 15
+
+```
+### Capturing User Responses (input)
+Suspend program execution and open standard console input streams to securely ingest string-based terminal values directly inside active variables.
+
+```text
+print "Enter access authorization key numeric index:"
+let registration_token = input
+
+print "Captured input index token value successfully."
+
+```
