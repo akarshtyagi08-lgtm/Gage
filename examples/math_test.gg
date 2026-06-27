@@ -1,0 +1,8 @@
+let x = -25
+let y = 10
+
+# Testing new Set 1 Math features
+print abs(x)       # Should print 25
+print sqrt(abs(x)) # Should print 5
+print max(x, y)    # Should print 10
+print min(x, y)    # Should print -25
