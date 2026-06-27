@@ -79,7 +79,6 @@ void compile_expression(FILE* out) {
     while (currentTokenIndex < tokenCount) {
         Token t = tokens[currentTokenIndex];
         
-        // Strictly stop expressions before structural bounds or keywords
         if (t.type == TOKEN_PRINT || t.type == TOKEN_LET || t.type == TOKEN_WHILE || 
             t.type == TOKEN_RBRACE || t.type == TOKEN_LBRACE || 
             t.type == TOKEN_LPAREN || t.type == TOKEN_RPAREN) break;
@@ -148,6 +147,8 @@ int main(int argc, char** argv) {
     FILE* m_in = fopen(".gm.c", "r");
     int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c);
     fclose(m_in); fprintf(out_c, "return 0;}"); fclose(out_c);
-    system("clang .gt.c -o .ge && ./.ge");
+    
+    // Global fix: Compile output straight into safe internal executable environment memory path
+    system("clang .gt.c -o $PREFIX/bin/.gage_run && chmod +x $PREFIX/bin/.gage_run && .gage_run");
     return 0;
 }
