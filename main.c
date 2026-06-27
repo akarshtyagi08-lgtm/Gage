@@ -236,8 +236,8 @@ int main(int argc, char** argv) {
         printf("\n=== GAGE v3.4.1 HELP ===\nCommands: gage <file.gg>\nFeatures: let, print, while, exec, import, color, clear, delay.\nSee DOCS.md for details.\n\n");
         return 0;
     }
-    // VERSION COMMAND ADDED HERE
-    if (argc == 2 && (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "--version") == 0)) {
+    // FIXED: Now supports -v and --version
+    if (argc == 2 && (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)) {
         printf("Gage Compiler v3.4.1\n");
         return 0;
     }
