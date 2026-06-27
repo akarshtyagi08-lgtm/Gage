@@ -1,113 +1,96 @@
-# Gage Programming Language - Master Documentation (v3.4.1)
+# Gage Programming Language - Official Technical Manual (v3.4.1)
+
+**Developer:** Akarsh Tyagi
+**Contact:** akarshtyagi08@gmail.com
+**Repository:** https://github.com/akarshtyagi08-lgtm/Gage
+
+---
 
 ## 1. Introduction
-Gage is a high-performance, C-inspired programming language built for efficiency and direct hardware control. Designed as a lightweight compiler, Gage translates your script into an intermediate C source code, which is then compiled using Clang.
+Gage is a high-performance, C-inspired programming language built for efficiency and direct hardware control. It operates as a source-to-source compiler: it reads your `.gg` (Gage) script, generates intermediate C code (`.gm.c` and `.gt.c`), and uses `clang` to produce a binary executable (`.ge`). This ensures your scripts run with native C-like speed.
 
-## 2. Table of Contents
-1. Installation & Environment Setup
-2. Writing Your First Script
-3. Variable Declaration (let)
-4. Standard Output (print)
-5. Mathematical Operations
-6. Control Flow: While Loops
-7. Control Flow: If/Else/Elif Statements
-8. Control Flow: For Loops
-9. System Interfacing (exec)
-10. UI Control: Color and Clear
-11. Cursor Management
-12. Time Management (sleep/delay)
-13. Modular Programming (import)
-14. Advanced Compiler Features
-15. Troubleshooting & FAQ
+## 2. Environment Setup
+- **Requirements**: Clang compiler installed in Termux.
+- **Directory Structure**: Always work within `/sdcard/GAGE/` to ensure full sync capabilities between your terminal and file manager.
+- **File Extensions**: Use `.gg` for your source scripts.
+- **Modules**: Keep all external C files in the `modules/` folder.
 
----
+## 3. Detailed Language Reference
 
-## 3. Installation & Environment Setup
-Ensure your environment has Clang installed. Gage generates `.gm.c` and `.gt.c` files during compilation. Ensure these files have read/write permissions in your `/sdcard/GAGE/` directory.
+### 3.1 Variable Declaration: `let`
+- **Purpose**: Initializes an integer variable. Gage enforces strict integer typing.
+- **Syntax**: `let [variable_name] = [integer_value]`
+- **Example**: `let score = 100`
+- **Detailed Rules**: 
+    - Variable names must be alphanumeric and cannot start with numbers.
+    - Reserved keywords (print, while, let, if, else, etc.) cannot be used as names.
+    - If you try to declare a variable that already exists, the linter may throw an error.
 
-## 4. Writing Your First Script
-Create a file with the `.gg` extension (e.g., `test.gg`). 
-- Syntax: `print 1`
-- Execution: `gage test.gg`
+### 3.2 Output: `print`
+- **Purpose**: Displays an integer in the terminal.
+- **Syntax**: `print [variable_or_integer]`
+- **Behavior**: Every `print` command automatically adds a newline character (`\n`) to the output.
+- **Note**: You do not need to manually manage string formatting or newlines for basic output.
 
-## 5. Variable Declaration (let)
-Gage uses `let` for defining integers.
-- Syntax: `let variable_name = value`
-- Example: `let score = 100`
-- Rules: Names must be alphanumeric and can contain underscores.
+### 3.3 Control Flow: `while`
+- **Purpose**: Execute a block of code repeatedly while the condition is true.
+- **Syntax**: 
 
-## 6. Standard Output (print)
-Outputs values to the terminal.
-- Behavior: Every `print` call appends a newline (`\n`) automatically.
-- Example: `print 50`
-
-## 7. Mathematical Operations
-Gage supports basic arithmetic operators:
-- `+` : Addition
-- `-` : Subtraction
-- `*` : Multiplication
-- `/` : Division
-- `%` : Modulo
-
-## 8. Control Flow: While Loops
-Used for repeating blocks of code based on a condition.
-- Syntax: 
-  while (condition) {
-      statement
+  while ([condition]) {
+      [statement_1]
+      [statement_2]
   }
 
-## 9. Control Flow: If/Else/Elif
-Logic branches allow for conditional execution.
-- Syntax:
-  if (condition) {
-      // code
-  } elif (condition) {
-      // code
-  } else {
-      // code
-  }
-
-## 10. Control Flow: For Loops
-Ideal for iteration over ranges or animation frames. 
-
-## 11. System Interfacing (exec)
-Executes system commands.
-- Syntax: `exec "command"`
-- Example: `exec "clear"`
-
-## 12. UI Control: Color and Clear
-- `color [code]`: Changes terminal text color.
-- `clear`: Wipes the console buffer.
-
-## 13. Cursor Management
-- `hide_cursor`: Makes the terminal cursor invisible.
-- `show_cursor`: Resets the terminal cursor.
-- `cursor`: Places the cursor at specific coordinates.
-
-## 14. Time Management
-- `delay [ms]`: Pause in milliseconds. Uses `usleep`.
-- `sleep [s]`: Pause in seconds.
-
-## 15. Modular Programming (import)
-The modular system allows extending the core language.
-- Structure: Place module files in `/sdcard/GAGE/modules/`.
-- Usage: `import random`
-- Implementation: The compiler reads `modules/[name].c` and injects code.
-
----
-
-## 16. Advanced Features
-- Tokenization: The compiler uses a custom tokenizer to handle `|` operators, string literals, and whitespace.
-- Intermediate Files: The compiler generates `.gm.c` and `.gt.c` during the build process.
-
-## 17. Troubleshooting & FAQ
-- Q: My code isn't running? 
-  A: Check for syntax errors in your `.gg` file. Ensure you are in the `/sdcard/GAGE` directory.
-- Q: Why are modules not importing? 
-  A: Ensure the file exists at `/sdcard/GAGE/modules/[name].c`.
-- Q: How to check version? 
-  A: Type `gage -v` or `gage --version`.
-
----
-GitHub Repository: https://github.com/akarshtyagi08-lgtm/Gage
-Note: Gage is an evolving language. Suggestions for new tokens or modules can be submitted via Pull Requests.
+ * **Tip**: Ensure your loop condition eventually becomes false to avoid infinite loops.
+### 3.4 Logical Branching: if, elif, else
+ * **Purpose**: Control program flow based on conditions.
+ * **Supported Operators**: == (Equal), != (Not Equal), > (Greater), < (Less).
+ * **Syntax**:
+   if (x == 10) { print 1 }
+   elif (x == 5) { print 0 }
+   else { print 9 }
+### 3.5 System Interface: exec
+ * **Purpose**: Execute native shell commands from within your Gage script.
+ * **Syntax**: exec "[shell_command]"
+ * **Example**: exec "clear" or exec "ls -la".
+ * **Warning**: Be careful executing commands that might block execution indefinitely.
+### 3.6 UI Controls & Terminal Rendering
+ * **color [code]**: Sets the terminal text color using ANSI integer codes (e.g., color 31 for red, color 32 for green).
+ * **clear**: Wipes the current terminal screen buffer, giving you a fresh canvas.
+ * **hide_cursor**: Hides the blinking terminal cursor for a cleaner UI.
+ * **show_cursor**: Restores the terminal blinking cursor.
+ * **delay [ms]**: Pauses script execution for the specified milliseconds using usleep. Use this for animation frames.
+ * **sleep [s]**: Pauses script execution for the specified number of seconds.
+## 4. The Modular System (import)
+Modular programming keeps your main script clean and readable.
+ * **Setup**: Create a folder named modules/ in your root (/sdcard/GAGE/modules/).
+ * **Creating a Module**:
+   1. Create a file in modules/, e.g., modules/random.c.
+   2. Write your C logic (e.g., srand(time(NULL));).
+ * **Importing**:
+   * Usage: import [name]
+   * Example: import random
+ * **Mechanism**: The compiler scans your import statement, locates /sdcard/GAGE/modules/[name].c, reads it, and injects that content directly into the translated C code before the final compilation step.
+## 5. Error Handling & The Gage Linter
+Gage's internal linter performs static analysis on your code.
+ * **Syntax Error**: Triggered if you miss braces {} or parentheses () in your loops or conditions.
+ * **Linter Error**: Triggered if you attempt to use an undeclared variable. The compiler will stop and report: [Gage Linter Error] Variable not found: [var_name].
+ * **Module Error**: Triggered if you import [name] but the file modules/[name].c does not exist in the designated directory.
+ * **Clang/Compiler Error**: If the intermediate C translation is logically invalid (e.g., C syntax errors), the Clang compiler will stop and provide a C-level error report. Check .gt.c for specific C-level issues.
+## 6. Frequently Asked Questions (FAQ)
+**Q: Do I need \n for a new line?**
+A: No. Every print command includes a newline by default.
+**Q: Where should my module files go?**
+A: Always in the /sdcard/GAGE/modules/ directory.
+**Q: Why is my script failing?**
+A: Double-check that you are in the /sdcard/GAGE directory, check your file extension (must be .gg), and verify that all variables used are defined with let at the top of the file.
+**Q: How do I verify my Gage version?**
+A: Type gage -v or gage --version in your terminal.
+## 7. Best Practices
+ 1. **Initialize first**: Always declare variables using let before using them in loops.
+ 2. **Module hygiene**: Delete unused .c files in modules/ to prevent accidentally injecting old code.
+ 3. **Cleanliness**: Use the clear command at the very start of scripts that render UI components.
+ 4. **Debugging**: If your Gage logic behaves unexpectedly, check the generated .gm.c file to see how it was translated.
+ 5. **Naming**: Use descriptive variable names (e.g., let frameCounter = 1) to help with debugging.
+ 6. **Collaboration**: If you find a bug, email the logs to akarshtyagi08@gmail.com.
+EOF
