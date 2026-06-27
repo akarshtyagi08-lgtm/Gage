@@ -3,21 +3,21 @@ clear()
 let x = 1
 
 while (x < 25) {
-    # Draw the object
+    # Draw the moving object
     cursor(x, 5)
     color(32)
     render "=>"
     
-    # Erase the trail behind it
+    # Clean up the trail behind it
     cursor(x - 1, 5)
     render " "
     
-    # Wait for 40 milliseconds (approx 25 frames per second)
+    # Frame delay in milliseconds (~25 FPS)
     delay(40)
     x += 1
 }
 
-# Reset screen state
+# Reset terminal properties to normal
 cursor(1, 8)
 color(0)
 show_cursor()
