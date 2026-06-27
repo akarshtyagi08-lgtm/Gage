@@ -232,6 +232,12 @@ void compile_statement(FILE* out) {
 }
 
 int main(int argc, char** argv) {
+    // Automatically check and install Clang dynamically if missing
+    if (system("command -v clang > /dev/null 2>&1") != 0) {
+        printf("Clang is missing! Installing it automatically for Gage... 🚀\n");
+        system("pkg update -y && pkg install clang -y");
+    }
+
     if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) {
         printf("\n=== GAGE v3.4.1 HELP ===\nCommands: gage <file.gg>\nFeatures: let, print, while, exec, import, color, clear, delay.\nSee DOCS.md for details.\n\n");
         return 0;
