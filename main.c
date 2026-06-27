@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <time.h>
 
-// [Gage Compiler Core v3.4.0 - Master Integration]
 void compile_statement(FILE* out);
 void compile_expression(FILE* out);
 void compile_block(FILE* out);
@@ -30,15 +29,9 @@ char *src; int src_pos = 0, src_len = 0;
 Token tokens[10000]; int tokenCount = 0, currentTokenIndex = 0;
 char declared_vars[1000][50]; int declared_count = 0;
 
-int is_declared(const char* name) {
-    for (int i = 0; i < declared_count; i++) if (strcmp(declared_vars[i], name) == 0) return 1;
-    return 0;
-}
+int is_declared(const char* name) { for (int i = 0; i < declared_count; i++) if (strcmp(declared_vars[i], name) == 0) return 1; return 0; }
 void declare_var(const char* name) { strcpy(declared_vars[declared_count++], name); }
-
-void throw_lint_error(const char* msg, const char* var_name) {
-    printf("\033[1;31m[Gage Linter Error]\033[0m %s '%s'\n", msg, var_name); exit(1);
-}
+void throw_lint_error(const char* msg, const char* var_name) { printf("\033[1;31m[Gage Linter Error]\033[0m %s '%s'\n", msg, var_name); exit(1); }
 
 void tokenize() {
     while (src_pos < src_len) {
@@ -133,16 +126,19 @@ void compile_statement(FILE* out) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && (strcmp(argv[1], "--version") == 0)) { printf("Gage Programming Language v3.4.0\n"); return 0; }
-    if (argc == 2 && (strcmp(argv[1], "help") == 0)) { 
-        printf("\n=== GAGE v3.4.0 MASTER MANUAL ===\nFeatures: Variables, ||(comment), &&, ||, Math, System, Graphics, Modules\nFull Details in DOCS.md\n"); return 0; 
-    }
     if (argc < 2) { printf("Usage: gage <filename.gg>\n"); return 1; }
-    FILE* file = fopen(argv[1], "r"); src_len = ftell(file); fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET); src = malloc(src_len + 1); fread(src, 1, src_len, file); fclose(file); src[src_len] = '\0';
+    
+    // Fix: Moved out_main into local scope for safe access
+    FILE* file = fopen(argv[1], "r"); if (!file) { printf("Error: Could not open file.\n"); return 1; }
+    fseek(file, 0, SEEK_END); src_len = ftell(file); fseek(file, 0, SEEK_SET); src = malloc(src_len + 1); fread(src, 1, src_len, file); fclose(file); src[src_len] = '\0';
     tokenize(); char* tmp = getenv("TMPDIR") ? getenv("TMPDIR") : "/tmp"; char p_m[512], p_t[512], p_e[512]; sprintf(p_m, "%s/.gm.c", tmp); sprintf(p_t, "%s/.gt.c", tmp); sprintf(p_e, "%s/.ge", tmp);
-    out_main = fopen(p_m, "w"); while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) compile_statement(out_main); fclose(out_main);
+    
+    FILE* out_main = fopen(p_m, "w"); 
+    while (currentTokenIndex < tokenCount && tokens[currentTokenIndex].type != TOKEN_EOF) compile_statement(out_main); 
+    fclose(out_main);
+    
     FILE* out_c = fopen(p_t, "w");
-    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n#include <time.h>\n#include <string.h>\n#include <ctype.h>\n#define max(a,b) ((a)>(b)?(a):(b))\n#define min(a,b) ((a)<(b)?(a):(b))\n#define delay(ms) usleep((unsigned int)(ms)*1000)\n#define color(c) printf(\"\\033[%%dm\", (int)(c))\n#define cursor(x,y) printf(\"\\033[%%d;%%dH\", (int)(y), (int)(x))\n#define hide_cursor() printf(\"\\033[?25l\")\n#define show_cursor() printf(\"\\033[?25h\")\n");
-    fprintf(out_c, "#define randint(min, max) (rand() %% ((max) - (min) + 1) + (min))\n#define rand_float() ((double)rand() / (double)RAND_MAX)\n#define timestamp() (long)time(NULL)\n#define str_len(s) strlen(s)\nint main(){");
+    fprintf(out_c, "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <unistd.h>\n#include <time.h>\n#include <string.h>\n#include <ctype.h>\n#define max(a,b) ((a)>(b)?(a):(b))\n#define min(a,b) ((a)<(b)?(a):(b))\n#define delay(ms) usleep((unsigned int)(ms)*1000)\n#define color(c) printf(\"\\033[%%dm\", (int)(c))\n#define cursor(x,y) printf(\"\\033[%%d;%%dH\", (int)(y), (int)(x))\n#define hide_cursor() printf(\"\\033[?25l\")\n#define show_cursor() printf(\"\\033[?25h\")\n#define randint(min, max) (rand() %% ((max) - (min) + 1) + (min))\n#define rand_float() ((double)rand() / (double)RAND_MAX)\n#define timestamp() (long)time(NULL)\n#define str_len(s) strlen(s)\nint main(){");
     FILE* m_in = fopen(p_m, "r"); int c; while ((c = fgetc(m_in)) != EOF) fputc(c, out_c); fclose(m_in);
     fprintf(out_c, "return 0;}"); fclose(out_c); free(src);
     char cmd[1024]; sprintf(cmd, "clang -O0 -w %s -o %s -lm && %s", p_t, p_e, p_e); system(cmd); char clean[1024]; sprintf(clean, "rm -f %s %s %s", p_m, p_t, p_e); system(clean); return 0;
