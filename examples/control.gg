@@ -1,0 +1,22 @@
+print "--- Testing Gage Conditional & Switch States ---"
+let score = 85
+if (score > 90) {
+    print "Grade A"
+} elif (score > 80) {
+    print "Grade B"
+} else {
+    print "Grade C"
+}
+
+let state = 1
+switch (state) {
+    case 0 {
+        print "Offline"
+    }
+    case 1 {
+        print "Online"
+    }
+    default {
+        print "Unknown"
+    }
+}

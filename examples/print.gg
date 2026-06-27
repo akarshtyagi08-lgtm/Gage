@@ -1,0 +1,5 @@
+print "--- Testing Gage Print Features ---"
+print "Hello World!\n"
+let test_var = 100
+print test_var
+print (50 * 2) + 15

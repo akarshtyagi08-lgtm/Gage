@@ -1,0 +1,8 @@
+print "--- Testing Gage Math & Shorthands ---"
+let x = 10.5
+let y = 3
+print x + y
+x += 5
+print x
+let rem = 14 % 3
+print rem
