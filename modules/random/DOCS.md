@@ -1,38 +1,34 @@
-# 🎲 Random Module Documentation
+# 🎲 Comprehensive Random Module
+Contains 30 fully fleshed-out named random generation utilities for high-performance scripting.
 
-The `random` module provides 30 production-grade functions for simulating real-world randomness, games, and math generation inside the Gage Engine ecosystem.
-
-## Complete Feature Matrix
-
-| Feature Function | Parameters | Return Scope | Description & Use Case |
-| :--- | :--- | :--- | :--- |
-| `gage_random_binary()` | None | `0` or `1` | Returns exactly 0 or 1. Perfect for strict yes/no flags. |
-| `gage_random_to_custom(max)` | `max` (Int) | `0` to `max` | Generates a bounded value starting from zero up to your custom limit. |
-| `gage_random_range(min, max)`| `min`, `max` | `min` to `max` | Standard custom-to-custom lower and upper bounded item generator. |
-| `gage_random_coin_flip()` | None | `0` or `1` | Coin flipping simulation. Returns 0 for Tails, 1 for Heads. |
-| `gage_random_dice_six()` | None | `1` to `6` | Simulates a standard 6-sided dice roll for games. |
-| `gage_random_dice_twenty()` | None | `1` to `20` | Generates a 1-20 D20 score for classic tabletop RPG mechanics. |
-| `gage_random_percentage()` | None | `0` to `100` | Useful for dropped rates, damage probabilities, or success rates. |
-| `gage_random_negative_range()`| `min`, `max` | Negative limits | Explicit range calculator that cleanly respects negative floor bounds. |
-| `gage_random_odd(max)` | `max` (Int) | Odd Int | Guarantees an odd value. Excellent for parsing odd procedural loops. |
-| `gage_random_even(max)` | `max` (Int) | Even Int | Guarantees an even value output for aligned spacing systems. |
-| `gage_random_sign()` | None | `-1` or `1` | Returns 1 or -1. Speeds up direction calculations in 2D physics engines. |
-| `gage_random_byte()` | None | `0` to `255` | Generates an unsigned 8-bit byte integer for raw socket packets. |
-| `gage_random_rgb_channel()` | None | `0` to `255` | Returns an integer fit to act as a raw color channel (Red, Green, Blue). |
-| `gage_random_ascii_upper()` | None | `65` to `90` | Returns an uppercase alphabetical ASCII character marker token. |
-| `gage_random_ascii_lower()` | None | `97` to `122` | Returns a lowercase alphabetical ASCII character marker token. |
-| `gage_random_digit()` | None | `0` to `9` | Returns an integer digit between 0 and 9 for string masking algorithms. |
-| `gage_random_rock_paper_scissors()`| None | `0` to `2` | Simulates choices: 0 equals Rock, 1 equals Paper, 2 equals Scissors. |
-| `gage_random_day_of_week()` | None | `1` to `7` | Chooses an integer representative day sequence mapping marker (1-7). |
-| `gage_random_month()` | None | `1` to `12` | Picks a calendar month representation metric bound (1 to 12). |
-| `gage_random_hour()` | None | `0` to `23` | Emulates full military format hour timelines dynamically. |
-| `gage_random_minute()` | None | `0` to `59` | Generates minutes constraints tracking indices safely. |
-| `gage_random_year_near()` | None | `2020`-`2035` | Picks a nearby timeline calendar year value for data testing. |
-| `gage_random_angle()` | None | `0` to `359` | Picks an absolute vector rotation angle inside a 360-degree loop. |
-| `gage_random_millisecond()`| None | `0` to `999` | Generates micro split delta bounds values for clock variations. |
-| `gage_random_bool()` | None | `0` or `1` | A clean wrapper for standard conditional true/false triggers. |
-| `gage_random_chance_one_in(n)`| `n` (Int) | `0` or `1` | Returns true precisely once inside every N checking passes. |
-| `gage_random_card_suit()` | None | `0` to `3` | Returns standard card suit offsets: Spades, Hearts, Diamonds, Clubs. |
-| `gage_random_card_value()` | None | `1` to `13` | Returns typical card scales: Ace (1), numbers 2-10, Jack/Queen/King (11-13). |
-| `gage_random_grid_index(w, h)`| `w`, `h` | Flattened index| Converts width and height limits to flat single index array grids. |
-| `gage_random_prime_low()` | None | Prime pool | Draws a low mathematical prime factor below 30 directly. |
+### Complete Feature List:
+1. `gage_random_binary()` - Returns raw 0 or 1.
+2. `gage_random_to_custom(max)` - Generates from 0 to custom cap.
+3. `gage_random_range(min, max)` - Bounded min/max generator.
+4. `gage_random_coin_flip()` - 0/1 coin toss representation.
+5. `gage_random_dice_six()` - Standard D6 roll simulation.
+6. `gage_random_dice_twenty()` - Tabletop D20 simulator.
+7. `gage_random_percentage()` - Probability engine from 0 to 100.
+8. `gage_random_negative_range(min, max)` - Signed math boundary tracking.
+9. `gage_random_odd(max)` - Enforces odd-value outputs.
+10. `gage_random_even(max)` - Enforces even-value outputs.
+11. `gage_random_sign()` - Flips between 1 and -1 directions.
+12. `gage_random_byte()` - Emits raw 8-bit values (0-255).
+13. `gage_random_rgb_channel()` - Color matrix channel helper.
+14. `gage_random_ascii_upper()` - Uppercase alpha ASCII index.
+15. `gage_random_ascii_lower()` - Lowercase alpha ASCII index.
+16. `gage_random_digit()` - Returns single string char token digit.
+17. `gage_random_rock_paper_scissors()` - Index game choices (0-2).
+18. `gage_random_day_of_week()` - Calendar weekdays mapping loop tracker.
+19. `gage_random_month()` - Calendar month boundary tracker.
+20. `gage_random_hour()` - 24-hour cycle generator.
+21. `gage_random_minute()` - 60-minute loop constraint.
+22. `gage_random_year_near()` - Timeline anchor simulation.
+23. `gage_random_angle()` - 360-degree vector picker.
+24. `gage_random_millisecond()` - Timing delta variations picker.
+25. `gage_random_bool()` - Logic conditional boolean flag.
+26. `gage_random_chance_one_in(n)` - Evaluates exactly a 1/N drop rate.
+27. `gage_random_card_suit()` - Card suite array coordinate mapping pointer.
+28. `gage_random_card_value()` - 1 to 13 card level generator.
+29. `gage_random_grid_index(w, h)` - Packs coordinates layout into array indexes.
+30. `gage_random_prime_low()` - Selects low prime arrays.

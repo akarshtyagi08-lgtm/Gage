@@ -1,38 +1,34 @@
-# 🎨 Terminal User Interface Drawing Module Documentation
+# 🎨 Comprehensive UI Module
+Universal True-Color matrix managers, Canvas controllers, and formatting layers for the terminal wrapper.
 
-The `ui` module maps raw terminal escape protocols into easily called graphics commands, cell painters, rendering controllers, and style manipulators for Gage.
-
-## Complete Feature Matrix
-
-| Feature Function | Visual Escape Target | Rendering Mode | Interface Capabilities & Purpose |
-| :--- | :--- | :--- | :--- |
-| `gage_ui_draw_box()` | Output Stream | Plain Text | Draws clear structural borders loops bounding console regions. |
-| `gage_ui_draw_divider()`| Output Stream | Plain Text | Draws linear separation tracks dividing visualization cells. |
-| `gage_ui_color_red()` | Foreground | Red Channel | Renders subsequent text letters characters in pure red. |
-| `gage_ui_color_green()` | Foreground | Green Channel| Renders subsequent text letters characters in pure green. |
-| `gage_ui_color_blue()` | Foreground | Blue Channel | Renders subsequent text letters characters in pure blue. |
-| `gage_ui_color_yellow()`| Foreground | Yellow Layer | Renders subsequent text letters characters in pure yellow. |
-| `gage_ui_color_cyan()` | Foreground | Cyan Layer | Renders subsequent text letters characters in pure cyan. |
-| `gage_ui_color_magenta()`| Foreground | Magenta Layer| Renders subsequent text letters characters in pure magenta. |
-| `gage_ui_color_white()` | Foreground | White Matrix | Renders subsequent text letters characters in pure white. |
-| `gage_ui_color_black()` | Foreground | Black Track | Renders subsequent text letters characters in pure black. |
-| `gage_ui_bg_red()` | Background | Cell Area | Covers backend text blocks layout in structural red. |
-| `gage_ui_bg_green()` | Background | Cell Area | Covers backend text blocks layout in structural green. |
-| `gage_ui_bg_blue()` | Background | Cell Area | Covers backend text blocks layout in structural blue. |
-| `gage_ui_bg_yellow()` | Background | Cell Area | Covers backend text blocks layout in structural yellow. |
-| `gage_ui_bg_cyan()` | Background | Cell Area | Covers backend text blocks layout in structural cyan. |
-| `gage_ui_bg_magenta()` | Background | Cell Area | Covers backend text blocks layout in structural magenta. |
-| `gage_ui_bg_white()` | Background | Cell Area | Covers backend text blocks layout in structural white. |
-| `gage_ui_bg_black()` | Background | Cell Area | Covers backend text blocks layout in structural black. |
-| `gage_ui_style_reset()` | System State | All Resets | Strips out formatting properties from terminal tracks. |
-| `gage_ui_style_bold()` | System State | Font Style | Amplifies text weighting bounds visibility configurations. |
-| `gage_ui_style_dim()` | System State | Font Style | Scales char intensity variables downwards to drop glare. |
-| `gage_ui_style_italic()`| System State | Font Style | Slants structural typography maps fields into italics. |
-| `gage_ui_style_underline()`| System State| Text Effect | Trims character outlines baseline directly with highlights. |
-| `gage_ui_style_blink()` | System State | Text Effect | Activates rapid cell refresh state transitions triggers. |
-| `gage_ui_style_reverse()`| System State | Text Effect | Inverts foreground value registers with background sets. |
-| `gage_ui_style_hidden()` | System State | Text Effect | Conceals char fields keeping data securely invisible. |
-| `gage_ui_screen_clear()`| Console Screen| Full Clear | Purges visual grid allocations resetting tracking limits. |
-| `gage_ui_cursor_move_up()`| Grid Tracker | Position Shift| Steps workspace view position pointer up by 1 grid cell line. |
-| `gage_ui_cursor_move_down()`|Grid Tracker| Position Shift| Steps workspace view position pointer down by 1 grid cell line. |
-| `gage_ui_cursor_hide()` | Grid Tracker | Visibility | Masks console typing tracking ticks during text screen animations. |
+### Complete Feature List:
+1. `gage_ui_set_text_color_rgb(r, g, b)` - Sets full true-color terminal foregrounds.
+2. `gage_ui_set_bg_color_rgb(r, g, b)` - Sets full true-color terminal backgrounds.
+3. `gage_ui_reset_canvas()` - Absolute visual board canvas clear utility.
+4. `gage_ui_draw_box()` - Renders clean block frame outlines loops.
+5. `gage_ui_draw_divider()` - Linear section separation track utility.
+6. `gage_ui_color_red()` - Legacy simple red text mapping parameter.
+7. `gage_ui_color_green()` - Legacy simple green text mapping parameter.
+8. `gage_ui_color_blue()` - Legacy simple blue text mapping parameter.
+9. `gage_ui_color_yellow()` - Legacy simple yellow text mapping parameter.
+10. `gage_ui_color_cyan()` - Legacy simple cyan text mapping parameter.
+11. `gage_ui_color_magenta()` - Legacy simple magenta text mapping parameter.
+12. `gage_ui_color_white()` - Legacy simple white text mapping parameter.
+13. `gage_ui_color_black()` - Legacy simple black text mapping parameter.
+14. `gage_ui_bg_red()` - Legacy simple red cell block backend layer.
+15. `gage_ui_bg_green()` - Legacy simple green cell block backend layer.
+16. `gage_ui_bg_blue()` - Legacy simple blue cell block backend layer.
+17. `gage_ui_bg_yellow()` - Legacy simple yellow cell block backend layer.
+18. `gage_ui_bg_cyan()` - Legacy simple cyan cell block backend layer.
+19. `gage_ui_bg_magenta()` - Legacy simple magenta cell block backend layer.
+20. `gage_ui_bg_white()` - Legacy simple white cell block backend layer.
+21. `gage_ui_bg_black()` - Legacy simple black cell block backend layer.
+22. `gage_ui_style_reset()` - Formats clearance state reset node.
+23. `gage_ui_style_bold()` - Font thickness variable enhancer step.
+24. `gage_ui_style_dim()` - Soft contrast value variable drop tracker.
+25. `gage_ui_style_italic()` - Italics slanting typography shift mapping.
+26. `gage_ui_style_underline()` - Character underline baseline tracker.
+27. `gage_ui_style_blink()` - Interactive display rapid cell layout triggers.
+28. `gage_ui_style_reverse()` - Inverts foreground fields with backgrounds.
+29. `gage_ui_style_hidden()` - Masks characters keeping data layouts invisible.
+30. `gage_ui_cursor_hide()` - Shuts off interactive flashing typing tracking index ticks.
