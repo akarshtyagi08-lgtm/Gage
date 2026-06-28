@@ -1,4 +1,21 @@
+// GAGE MODULE: CRYPTO - OBFUSCATION SUITE
+// Provides deterministic hashing, bit-scrambling, and
+// side-channel hardened data obfuscation for secure frames.
+
 int main() {
-    int hashed_token = gage_crypto_simple_hash(9999);
-    return hashed_token;
+    // Stage 1: Define security parameter blocks
+    int input_key = 0xDEADC0DE;
+    int salt_factor = 0x55;
+    
+    // Stage 2: Apply multi-layered obfuscation
+    // Apply XOR cipher followed by a pseudo-random hash step
+    int cipher_step_1 = gage_crypto_xor_cipher(input_key, salt_factor);
+    int cipher_step_2 = gage_crypto_simple_hash(cipher_step_1);
+    
+    // Branchless comparison check against expected register state
+    int verification_mask = gage_crypto_constant_time_compare(cipher_step_2, 9999);
+    
+    // Stage 3: Consolidate final security token
+    return cipher_step_2 & verification_mask;
 }
+// END OF FILE: modules/crypto/example.gg

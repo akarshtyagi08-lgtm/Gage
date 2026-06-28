@@ -1,4 +1,26 @@
+// GAGE MODULE: SYS - KERNEL DIAGNOSTICS SUITE
+// Interrogates low-level hardware counters, processing 
+// architecture data, and kernel-level status markers.
+
 int main() {
-    int active_cores = gage_sys_get_cpu_cores();
-    return active_cores;
+    // Stage 1: Query hardware topology
+    int cpu_threads = gage_sys_get_cpu_cores();
+    int active_pid = gage_sys_get_pid();
+    int health_status = 1;
+
+    // Stage 2: Logic analysis of system capabilities
+    // Verify thread count against predefined architecture bounds
+    int thread_mask = (cpu_threads > 4) & 1;
+    
+    if (thread_mask == 1) {
+        // High performance mode identified
+        health_status = health_status + 10;
+    } else {
+        // Efficiency mode identified
+        health_status = health_status + 5;
+    }
+
+    // Stage 3: Final diagnostic report token
+    return active_pid % health_status;
 }
+// END OF FILE: modules/sys/example.gg

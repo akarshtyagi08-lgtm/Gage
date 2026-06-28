@@ -1,4 +1,29 @@
+// GAGE MODULE: MATH - ALGEBRAIC OPTIMIZATION SUITE
+// This script utilizes scaled integer arithmetic to resolve
+// complex geometric transformations and area calculations.
+
 int main() {
-    int calculation = gage_math_multiply(25, 4);
-    return calculation;
+    // Stage 1: Define physical dimension constants
+    int radius = 10;
+    int iterations = 40;
+    int scaled_pi = 314159; // Pi * 10^5
+    int total_area_sum = 0;
+
+    // Stage 2: Geometric processing loop
+    // Calculating area for varying radii using scaling principles
+    while (iterations > 0) {
+        // Area = (Pi * r^2) / 100000
+        int area = (scaled_pi * radius * radius) / 100000;
+        
+        // Accumulate and shift radius to simulate growth
+        total_area_sum = total_area_sum + area;
+        radius = radius + 1;
+        
+        iterations = iterations - 1;
+    }
+
+    // Stage 3: Return the calculated matrix aggregate
+    // This value represents the integrated surface area profile
+    return total_area_sum / 40;
 }
+// END OF FILE: modules/math/example.gg

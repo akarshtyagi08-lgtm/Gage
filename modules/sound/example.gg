@@ -1,4 +1,24 @@
+// GAGE MODULE: SOUND - DSP SYNTHESIZER SUITE
+// Implements pulse-code modulation (PCM) approximations,
+// envelope modeling, and sequencer clock management.
+
 int main() {
-    gage_sound_success_chime();
-    return 1;
+    // Stage 1: Define sequencing parameters
+    int master_tempo = 120;
+    int attack_ms = 50;
+    int release_ms = 50;
+    int time_cursor = 60;
+
+    // Stage 2: Enveloping signal metrics calculation
+    // Model ADSR signal envelope gain at the time_cursor
+    int envelope_gain = gage_sound_envelope_adsr(attack_ms, 20, 80, release_ms, time_cursor);
+
+    // Stage 3: Audio trigger signaling
+    // Conditionally fire success chime if envelope gain is active
+    if (envelope_gain > 0) {
+        gage_sound_success_chime();
+    }
+
+    return envelope_gain;
 }
+// END OF FILE: modules/sound/example.gg

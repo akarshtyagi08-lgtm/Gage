@@ -1,4 +1,23 @@
+// GAGE MODULE: FILE - TRANSACTIONAL I/O SUITE
+// Manages persistent storage interactions, block verification,
+// and state log persistence within the sandbox filesystem.
+
 int main() {
-    int file_status = gage_file_exists_custom("/sdcard/GAGE/DOCS.md");
-    return file_status;
+    // Stage 1: Target path and state definition
+    const char* log_file = "/sdcard/GAGE/system.log";
+    int write_success = 0;
+
+    // Stage 2: Transactional write sequence
+    // Verify file existence first to prevent write-corruption
+    if (gage_file_exists_custom(log_file)) {
+        write_success = 1;
+        gage_file_append_custom(log_file, "SYNC_EVENT_SUCCESS");
+    } else {
+        write_success = 0;
+        gage_file_create_empty(log_file);
+    }
+
+    // Stage 3: Final confirmation token return
+    return write_success;
 }
+// END OF FILE: modules/file/example.gg

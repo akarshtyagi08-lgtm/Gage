@@ -1,4 +1,27 @@
+// GAGE MODULE: NET - SOCKET DIAGNOSTICS SUITE
+// Audits network interface states, socket availability,
+// and external gateway connectivity parameters.
+
 int main() {
-    int connection_status = gage_net_is_connected();
-    return connection_status;
+    // Stage 1: Initial connectivity handshake assessment
+    int is_online = gage_net_is_connected();
+    int network_health_score = 0;
+
+    // Stage 2: Logical routing diagnostics
+    if (is_online == 1) {
+        // Perform targeted host communication verification
+        int port_open = gage_net_check_port_custom("8.8.8.8", 53);
+        
+        if (port_open == 1) {
+            network_health_score = 100;
+        } else {
+            network_health_score = 50;
+        }
+    } else {
+        network_health_score = 0;
+    }
+
+    // Stage 3: Return master connectivity health token
+    return network_health_score;
 }
+// END OF FILE: modules/net/example.gg

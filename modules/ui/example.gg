@@ -1,4 +1,33 @@
+// GAGE MODULE: UI - TERMINAL RENDERER SUITE
+// Demonstrates coordinate-based rendering, color injection,
+// and screen buffer management for terminal visual feedback.
+
 int main() {
-    gage_ui_set_text_color_rgb(0, 255, 0);
+    // Stage 1: Initialization of visual state
+    int x_coord = 5;
+    int y_coord = 5;
+    int loop_counter = 20;
+
+    // Stage 2: Render loop for a visual progress bar
+    gage_ui_enable_alt_buffer();
+    gage_ui_style_bold();
+
+    while (loop_counter > 0) {
+        // Set dynamic color based on progress (RGB logic)
+        gage_ui_set_text_color_rgb(0, 200, 50);
+        
+        // Move cursor and print buffer markers
+        gage_ui_move_cursor(x_coord, y_coord);
+        
+        // Drawing horizontal bar segment
+        gage_ui_draw_horizontal_bar(10);
+        
+        x_coord = x_coord + 1;
+        loop_counter = loop_counter - 1;
+    }
+
+    // Stage 3: Cleanup and reset terminal state
+    gage_ui_style_reset();
     return 1;
 }
+// END OF FILE: modules/ui/example.gg

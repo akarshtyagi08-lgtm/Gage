@@ -1,4 +1,21 @@
+// GAGE MODULE: BITWISE - REGISTER LOGIC SUITE
+// Implements branchless arithmetic, bit packing, and
+// mask manipulation for high-throughput data processing.
+
 int main() {
-    int masked_value = gage_bitwise_and(255, 15);
-    return masked_value;
+    // Stage 1: Data packing for low-level register frames
+    int raw_data = 0xAAAA;
+    int mask = 0x00FF;
+    
+    // Stage 2: Bit manipulation logic
+    // Clear high-nibble bit groups via bitwise AND
+    int cleaned_data = gage_bitwise_and(raw_data, mask);
+    
+    // Perform branchless absolute value estimation
+    int sign_val = cleaned_data >> 31;
+    int absolute_val = (cleaned_data + sign_val) ^ sign_val;
+
+    // Stage 3: Final registry value consolidation
+    return absolute_val;
 }
+// END OF FILE: modules/bitwise/example.gg

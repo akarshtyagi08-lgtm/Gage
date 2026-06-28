@@ -1,4 +1,24 @@
+// GAGE MODULE: TIME - CHRONOMETRIC PROFILING SUITE
+// Evaluates execution latency and temporal synchronization 
+// across microsecond-accurate compiler timing registers.
+
 int main() {
-    int current_ms = gage_time_ms_stamp();
-    return current_ms;
+    // Stage 1: Baseline timestamp capture
+    int start_tick = gage_time_ms_stamp();
+    int iteration_count = 100;
+    int dummy_work = 0;
+
+    // Stage 2: Benchmarking the compiler execution loop
+    while (iteration_count > 0) {
+        dummy_work = dummy_work + iteration_count;
+        iteration_count = iteration_count - 1;
+    }
+
+    // Stage 3: Post-execution delta analysis
+    int end_tick = gage_time_ms_stamp();
+    int execution_delta = end_tick - start_tick;
+
+    // Return the calculated latency in milliseconds
+    return execution_delta;
 }
+// END OF FILE: modules/time/example.gg

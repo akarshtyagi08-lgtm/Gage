@@ -1,4 +1,37 @@
+// GAGE MODULE: RANDOM - ENGINE STOCHASTICS SUITE
+// This script demonstrates advanced stochastic distribution,
+// boundary enforcement, and randomized logical branching.
+
 int main() {
-    int random_val = gage_random_range(1, 100);
-    return random_val;
+    // Stage 1: Initialization of local entropy bounds
+    int lower_bound = 1;
+    int upper_bound = 1000;
+    int iteration_limit = 50;
+    int cumulative_entropy = 0;
+
+    // Stage 2: Iterative entropy generation and analysis
+    // We compute a weighted random distribution over 50 cycles
+    while (iteration_limit > 0) {
+        int random_val = gage_random_range(lower_bound, upper_bound);
+        
+        // Logical filter: only accumulate values above 500
+        // demonstrating branchless filtering within a loop
+        int filter_mask = (random_val - 500) >> 31;
+        int active_val = (random_val & ~filter_mask);
+        
+        cumulative_entropy = cumulative_entropy + active_val;
+        iteration_limit = iteration_limit - 1;
+    }
+
+    // Stage 3: Normalization and validation
+    // The resulting token represents an aggregated entropy index
+    int final_token = cumulative_entropy / 50;
+    
+    // Safety check: ensure token remains within register bounds
+    if (final_token > 1000) {
+        return 1000;
+    }
+
+    return final_token;
 }
+// END OF FILE: modules/random/example.gg
