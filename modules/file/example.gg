@@ -1,0 +1,4 @@
+int main() {
+    int file_status = gage_file_exists_custom("/sdcard/GAGE/DOCS.md");
+    return file_status;
+}

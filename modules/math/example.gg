@@ -1,0 +1,4 @@
+int main() {
+    int calculation = gage_math_multiply(25, 4);
+    return calculation;
+}

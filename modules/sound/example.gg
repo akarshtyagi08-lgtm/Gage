@@ -1,0 +1,4 @@
+int main() {
+    gage_sound_success_chime();
+    return 1;
+}

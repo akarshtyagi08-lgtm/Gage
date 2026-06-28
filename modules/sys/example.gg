@@ -1,0 +1,4 @@
+int main() {
+    int active_cores = gage_sys_get_cpu_cores();
+    return active_cores;
+}

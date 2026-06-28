@@ -1,0 +1,4 @@
+int main() {
+    int current_ms = gage_time_ms_stamp();
+    return current_ms;
+}

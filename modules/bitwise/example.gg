@@ -1,0 +1,4 @@
+int main() {
+    int masked_value = gage_bitwise_and(255, 15);
+    return masked_value;
+}

@@ -1,0 +1,4 @@
+int main() {
+    int hashed_token = gage_crypto_simple_hash(9999);
+    return hashed_token;
+}

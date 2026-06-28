@@ -1,0 +1,4 @@
+int main() {
+    int random_val = gage_random_range(1, 100);
+    return random_val;
+}

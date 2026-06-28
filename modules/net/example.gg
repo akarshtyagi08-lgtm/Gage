@@ -1,0 +1,4 @@
+int main() {
+    int connection_status = gage_net_is_connected();
+    return connection_status;
+}
